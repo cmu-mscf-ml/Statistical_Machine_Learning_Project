@@ -30,3 +30,5 @@ spread = spread.reindex(ticks)
 spread = spread.fillna(method='ffill')
 spread.to_csv(param['path_project']+'\\factors\\spread.csv')
 
+spread_diff = spread-spread.diff(1)
+spread_diff.to_csv(param['path_project']+'\\factors\\spread_diff.csv')

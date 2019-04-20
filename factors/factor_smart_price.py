@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 '''
-calculate each stock's closing executed price of each tick
+calculate each stock's closing smart price of each tick
 '''
 
 import numpy as np
@@ -13,9 +13,6 @@ param = {'path_data': 'F:\\Class - Statistical Machine Learning II\\project\\'
                       + 'project\\HFT\\Statistical_Machine_Learning_Project'}
 
 dataset = pd.read_csv(param['path_data'], header=0, index_col=0)
-dataset = dataset.loc[dataset['type']=='trade']
-dataset.index = range(len(dataset))
-
 dataset['time'] = dataset['time'].apply(lambda t: datetime.strptime(t,
                                                    '%Y-%m-%d %H:%M:%S.%f'))
 dataset['h_m_s'] = [datetime(t.year, t.month, t.day, t.hour, t.minute, t.second) for t in dataset['time']]

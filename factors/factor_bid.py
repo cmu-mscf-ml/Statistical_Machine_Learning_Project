@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+'''
+calculate each stock's closing bid price of each tick
+'''
 
 import numpy as np
 import pandas as pd
@@ -13,6 +16,10 @@ dataset = pd.read_csv(param['path_data'], header=0, index_col=0)
 dataset['time'] = dataset['time'].apply(lambda t: datetime.strptime(t,
                                                    '%Y-%m-%d %H:%M:%S.%f'))
 stocks = np.array(dataset['symbol'].unique())
-delta_t = 
-
 ticks = datetime(2019,4,4,9,30,0,0) + np.arange(23400)*timedelta(0,1,0)
+delta_t = timedelta(0,1,0)
+
+for stock in stocks:
+    subdata = dataset.loc[dataset['symbol']==stock]
+    subdata.index = range(len(subdata))
+    

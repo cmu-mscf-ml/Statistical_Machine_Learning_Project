@@ -15,7 +15,7 @@ param = {'path_data': 'F:\\Class - Statistical Machine Learning II\\project\\'
 dataset = pd.read_csv(param['path_data'], header=0, index_col=0)
 dataset['time'] = dataset['time'].apply(lambda t: datetime.strptime(t,
                                                    '%Y-%m-%d %H:%M:%S.%f'))
-dataset['h_m_s'] = [time(t.hour, t.minute, t.second) for t in dataset['time']]
+dataset['h_m_s'] = [datetime(t.year, t.month, t.day, t.hour, t.minute, t.second) for t in dataset['time']]
 stocks = np.array(dataset['symbol'].unique())
 ticks = datetime(2019,4,4,9,30,0,0) + np.arange(int(6.5*3600))*timedelta(0,1,0)
 delta_t = timedelta(0,1,0)
@@ -24,4 +24,5 @@ delta_t = timedelta(0,1,0)
 bid = dataset.groupby(by=['symbol','h_m_s']).last()['bid']
 bid = bid.reset_index()
 bid = bid.pivot(index='h_m_s',columns='symbol',values='bid')
-
+bid = bid.reindex(ticks)
+bid.to_csv(param['path_project']+'\\factors\\bid.csv')

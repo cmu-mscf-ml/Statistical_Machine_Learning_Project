@@ -28,5 +28,5 @@ exeprice = dataset.groupby(by=['symbol','h_m_s']).last()['tradePrice']
 exeprice = exeprice.reset_index()
 exeprice = exeprice.pivot(index='h_m_s',columns='symbol',values='tradePrice')
 exeprice = exeprice.reindex(ticks)
-# exeprice = exeprice.fillna(method='ffill')
+exeprice = exeprice.fillna(method='ffill')
 exeprice.to_csv(param['path_project']+'\\factors\\exeprice.csv')

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 '''
-calculate each stock's closing bid price of each tick
+calculate each stock's closing bid and ask price of each tick
 '''
 
 import numpy as np
@@ -25,4 +25,13 @@ bid = dataset.groupby(by=['symbol','h_m_s']).last()['bid']
 bid = bid.reset_index()
 bid = bid.pivot(index='h_m_s',columns='symbol',values='bid')
 bid = bid.reindex(ticks)
+bid = bid.fillna(method='ffill')
 bid.to_csv(param['path_project']+'\\factors\\bid.csv')
+
+
+ask = dataset.groupby(by=['symbol','h_m_s']).last()['ask']
+ask = ask.reset_index()
+ask = ask.pivot(index='h_m_s',columns='symbol',values='ask')
+ask = ask.reindex(ticks)
+ask = ask.fillna(method='ffill')
+ask.to_csv(param['path_project']+'\\factors\\ask.csv')

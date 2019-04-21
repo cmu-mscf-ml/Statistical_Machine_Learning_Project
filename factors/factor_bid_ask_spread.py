@@ -49,21 +49,26 @@ for stock in factor.columns:
 factor_name = 'spread_2s'
 factor = dataset.groupby(by=['symbol','h_m_s']).mean()['spread']
 factor = factor.reset_index()
-for stock in factor['symbol'].unique():
-    stock_factor = factor.loc[factor['symbol']==stock]
-    stock_factor.index = stock_factor['h_m_s']
-    stock_factor = stock_factor.reindex(ticks)
-    stock_factor = stock_factor[['spread']]
-
-
 factor = factor.pivot(index='h_m_s',columns='symbol',values='spread')
-
+factor = factor.reindex(ticks)
 factor = factor.fillna(method='ffill')
+factor = factor.rolling(2).mean()
 for stock in factor.columns:
     stock_factor = factor[[stock]]
     stock_factor.to_csv(param['path_project']+'\\factors\\'+factor_name+'\\'+stock+'.csv')
 
 # 5s
+factor_name = 'spread_5s'
+factor = dataset.groupby(by=['symbol','h_m_s']).mean()['spread']
+factor = factor.reset_index()
+factor = factor.pivot(index='h_m_s',columns='symbol',values='spread')
+factor = factor.reindex(ticks)
+factor = factor.fillna(method='ffill')
+factor = factor.rolling(5).mean()
+for stock in factor.columns:
+    stock_factor = factor[[stock]]
+    stock_factor.to_csv(param['path_project']+'\\factors\\'+factor_name+'\\'+stock+'.csv')
+
 # 10s
 # 30s
 

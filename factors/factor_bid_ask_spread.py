@@ -20,15 +20,26 @@ stocks = np.array(dataset['symbol'].unique())
 ticks = datetime(2019,4,4,9,30,0,0) + np.arange(int(6.5*3600))*timedelta(0,1,0)
 delta_t = timedelta(0,1,0)
 
+dataset['spread'] = dataset['ask']-dataset['bid']
 
-spread = dataset.groupby(by=['symbol','h_m_s']).last()[['bid','ask']]
-spread = spread['ask']-spread['bid']
-spread = spread.reset_index()
-spread = spread.rename(columns={0:'spread'})
-spread = spread.pivot(index='h_m_s',columns='symbol',values='spread')
-spread = spread.reindex(ticks)
-spread = spread.fillna(method='ffill')
-spread.to_csv(param['path_project']+'\\factors\\spread.csv')
+# snapshot
+factor = 'spread_snapshot'
+spread_snapshot = dataset.groupby(by=['symbol','h_m_s']).last()['spread']
+spread_snapshot = spread_snapshot.reset_index()
+spread_snapshot = spread_snapshot.pivot(index='h_m_s',columns='symbol',values='spread')
+spread_snapshot = spread_snapshot.reindex(ticks)
+spread_snapshot = spread_snapshot.fillna(method='ffill')
+for stock in spread_snapshot.columns:
+    stock_factor = spread_snapshot[[stock]]
+    stock_factor.to_csv(param['path_project']+'\\factors\\'+factor+'\\'+stock+'.csv')
+
+# time sensitive
+
+
+
+
+
+
 
 spread_diff = spread-spread.shift(1)
 spread_diff.to_csv(param['path_project']+'\\factors\\spread_diff.csv')

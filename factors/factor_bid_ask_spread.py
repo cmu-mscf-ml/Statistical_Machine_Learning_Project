@@ -95,6 +95,16 @@ for stock in factor.columns:
 
 # order sensitive
 # 5 orders
+factor_name = 'spread_5ord'
+for stock, group in dataset.groupby('symbol'):
+    stock_factor = group[['spread']].rolling(5).mean()
+    stock_factor['h_m_s'] = group['h_m_s']
+    stock_factor = stock_factor.groupby('h_m_s').last()[['spread']]
+    stock_factor = stock_factor.reindex(ticks)
+    stock_factor = stock_factor.fillna(method='ffill')
+    stock_factor.to_csv(param['path_project']+'\\factors\\'+factor_name+'\\'+stock+'.csv')
+
+
 # 10 orders
 # 20 orders
 # 50 orders

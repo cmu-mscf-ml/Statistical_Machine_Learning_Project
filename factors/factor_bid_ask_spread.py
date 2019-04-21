@@ -70,7 +70,28 @@ for stock in factor.columns:
     stock_factor.to_csv(param['path_project']+'\\factors\\'+factor_name+'\\'+stock+'.csv')
 
 # 10s
+factor_name = 'spread_10s'
+factor = dataset.groupby(by=['symbol','h_m_s']).mean()['spread']
+factor = factor.reset_index()
+factor = factor.pivot(index='h_m_s',columns='symbol',values='spread')
+factor = factor.reindex(ticks)
+factor = factor.fillna(method='ffill')
+factor = factor.rolling(10).mean()
+for stock in factor.columns:
+    stock_factor = factor[[stock]]
+    stock_factor.to_csv(param['path_project']+'\\factors\\'+factor_name+'\\'+stock+'.csv')
+
 # 30s
+factor_name = 'spread_30s'
+factor = dataset.groupby(by=['symbol','h_m_s']).mean()['spread']
+factor = factor.reset_index()
+factor = factor.pivot(index='h_m_s',columns='symbol',values='spread')
+factor = factor.reindex(ticks)
+factor = factor.fillna(method='ffill')
+factor = factor.rolling(30).mean()
+for stock in factor.columns:
+    stock_factor = factor[[stock]]
+    stock_factor.to_csv(param['path_project']+'\\factors\\'+factor_name+'\\'+stock+'.csv')
 
 # order sensitive
 # 5 orders

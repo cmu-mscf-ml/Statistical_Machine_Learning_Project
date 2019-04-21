@@ -34,18 +34,22 @@ for stock in spread_snapshot.columns:
     stock_factor.to_csv(param['path_project']+'\\factors\\'+factor_name+'\\'+stock+'.csv')
 
 # time sensitive
-# 1s
+# 1s & spread diff
 factor_name = 'spread_1s'
 factor = dataset.groupby(by=['symbol','h_m_s']).mean()['spread']
 factor = factor.reset_index()
 factor = factor.pivot(index='h_m_s',columns='symbol',values='spread')
 factor = factor.reindex(ticks)
 factor = factor.fillna(method='ffill')
+factor_diff = spread_snapshot-factor
 for stock in factor.columns:
     stock_factor = factor[[stock]]
     stock_factor.to_csv(param['path_project']+'\\factors\\'+factor_name+'\\'+stock+'.csv')
+    stock_factor_diff = factor_diff[[stock]]
+    stock_factor_diff.to_csv(param['path_project']+'\\factors\\'+factor_name+'_diff\\'+stock+'.csv')
 
-# 2s
+
+# 2s & spread diff
 factor_name = 'spread_2s'
 factor = dataset.groupby(by=['symbol','h_m_s']).mean()['spread']
 factor = factor.reset_index()
@@ -53,11 +57,14 @@ factor = factor.pivot(index='h_m_s',columns='symbol',values='spread')
 factor = factor.reindex(ticks)
 factor = factor.fillna(method='ffill')
 factor = factor.rolling(2).mean()
+factor_diff = spread_snapshot-factor
 for stock in factor.columns:
     stock_factor = factor[[stock]]
     stock_factor.to_csv(param['path_project']+'\\factors\\'+factor_name+'\\'+stock+'.csv')
+    stock_factor_diff = factor_diff[[stock]]
+    stock_factor_diff.to_csv(param['path_project']+'\\factors\\'+factor_name+'_diff\\'+stock+'.csv')
 
-# 5s
+# 5s & spread diff
 factor_name = 'spread_5s'
 factor = dataset.groupby(by=['symbol','h_m_s']).mean()['spread']
 factor = factor.reset_index()
@@ -65,11 +72,14 @@ factor = factor.pivot(index='h_m_s',columns='symbol',values='spread')
 factor = factor.reindex(ticks)
 factor = factor.fillna(method='ffill')
 factor = factor.rolling(5).mean()
+factor_diff = spread_snapshot-factor
 for stock in factor.columns:
     stock_factor = factor[[stock]]
     stock_factor.to_csv(param['path_project']+'\\factors\\'+factor_name+'\\'+stock+'.csv')
+    stock_factor_diff = factor_diff[[stock]]
+    stock_factor_diff.to_csv(param['path_project']+'\\factors\\'+factor_name+'_diff\\'+stock+'.csv')
 
-# 10s
+# 10s & spread diff
 factor_name = 'spread_10s'
 factor = dataset.groupby(by=['symbol','h_m_s']).mean()['spread']
 factor = factor.reset_index()
@@ -77,11 +87,14 @@ factor = factor.pivot(index='h_m_s',columns='symbol',values='spread')
 factor = factor.reindex(ticks)
 factor = factor.fillna(method='ffill')
 factor = factor.rolling(10).mean()
+factor_diff = spread_snapshot-factor
 for stock in factor.columns:
     stock_factor = factor[[stock]]
     stock_factor.to_csv(param['path_project']+'\\factors\\'+factor_name+'\\'+stock+'.csv')
+    stock_factor_diff = factor_diff[[stock]]
+    stock_factor_diff.to_csv(param['path_project']+'\\factors\\'+factor_name+'_diff\\'+stock+'.csv')
 
-# 30s
+# 30s & spread diff
 factor_name = 'spread_30s'
 factor = dataset.groupby(by=['symbol','h_m_s']).mean()['spread']
 factor = factor.reset_index()
@@ -89,9 +102,12 @@ factor = factor.pivot(index='h_m_s',columns='symbol',values='spread')
 factor = factor.reindex(ticks)
 factor = factor.fillna(method='ffill')
 factor = factor.rolling(30).mean()
+factor_diff = spread_snapshot-factor
 for stock in factor.columns:
     stock_factor = factor[[stock]]
     stock_factor.to_csv(param['path_project']+'\\factors\\'+factor_name+'\\'+stock+'.csv')
+    stock_factor_diff = factor_diff[[stock]]
+    stock_factor_diff.to_csv(param['path_project']+'\\factors\\'+factor_name+'_diff\\'+stock+'.csv')
 
 # order sensitive
 # 5 orders
@@ -104,10 +120,35 @@ for stock, group in dataset.groupby('symbol'):
     stock_factor = stock_factor.fillna(method='ffill')
     stock_factor.to_csv(param['path_project']+'\\factors\\'+factor_name+'\\'+stock+'.csv')
 
-
 # 10 orders
+factor_name = 'spread_10ord'
+for stock, group in dataset.groupby('symbol'):
+    stock_factor = group[['spread']].rolling(10).mean()
+    stock_factor['h_m_s'] = group['h_m_s']
+    stock_factor = stock_factor.groupby('h_m_s').last()[['spread']]
+    stock_factor = stock_factor.reindex(ticks)
+    stock_factor = stock_factor.fillna(method='ffill')
+    stock_factor.to_csv(param['path_project']+'\\factors\\'+factor_name+'\\'+stock+'.csv')
+
 # 20 orders
+factor_name = 'spread_20ord'
+for stock, group in dataset.groupby('symbol'):
+    stock_factor = group[['spread']].rolling(20).mean()
+    stock_factor['h_m_s'] = group['h_m_s']
+    stock_factor = stock_factor.groupby('h_m_s').last()[['spread']]
+    stock_factor = stock_factor.reindex(ticks)
+    stock_factor = stock_factor.fillna(method='ffill')
+    stock_factor.to_csv(param['path_project']+'\\factors\\'+factor_name+'\\'+stock+'.csv')
+
 # 50 orders
+factor_name = 'spread_50ord'
+for stock, group in dataset.groupby('symbol'):
+    stock_factor = group[['spread']].rolling(50).mean()
+    stock_factor['h_m_s'] = group['h_m_s']
+    stock_factor = stock_factor.groupby('h_m_s').last()[['spread']]
+    stock_factor = stock_factor.reindex(ticks)
+    stock_factor = stock_factor.fillna(method='ffill')
+    stock_factor.to_csv(param['path_project']+'\\factors\\'+factor_name+'\\'+stock+'.csv')
 
 
 

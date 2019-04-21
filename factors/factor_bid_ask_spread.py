@@ -23,7 +23,7 @@ delta_t = timedelta(0,1,0)
 dataset['spread'] = dataset['ask']-dataset['bid']
 
 # snapshot
-factor = 'spread_snapshot'
+factor_name = 'spread_snapshot'
 spread_snapshot = dataset.groupby(by=['symbol','h_m_s']).last()['spread']
 spread_snapshot = spread_snapshot.reset_index()
 spread_snapshot = spread_snapshot.pivot(index='h_m_s',columns='symbol',values='spread')
@@ -31,11 +31,29 @@ spread_snapshot = spread_snapshot.reindex(ticks)
 spread_snapshot = spread_snapshot.fillna(method='ffill')
 for stock in spread_snapshot.columns:
     stock_factor = spread_snapshot[[stock]]
-    stock_factor.to_csv(param['path_project']+'\\factors\\'+factor+'\\'+stock+'.csv')
+    stock_factor.to_csv(param['path_project']+'\\factors\\'+factor_name+'\\'+stock+'.csv')
 
 # time sensitive
+# 1s
+factor_name = 'spread_1s'
+factor = dataset.groupby(by=['symbol','h_m_s']).mean()['spread']
+factor = factor.reset_index()
+factor = factor.pivot(index='h_m_s',columns='symbol',values='spread')
+factor = factor.reindex(ticks)
+factor = factor.fillna(method='ffill')
+for stock in factor.columns:
+    stock_factor = factor[[stock]]
+    stock_factor.to_csv(param['path_project']+'\\factors\\'+factor_name+'\\'+stock+'.csv')
+# 2s
+# 5s
+# 10s
+# 30s
 
-
+# order sensitive
+# 5 orders
+# 10 orders
+# 20 orders
+# 50 orders
 
 
 

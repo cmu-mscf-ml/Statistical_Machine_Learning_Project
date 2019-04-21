@@ -32,7 +32,6 @@ spread_snapshot = spread_snapshot.fillna(method='ffill')
 for stock in spread_snapshot.columns:
     stock_factor = spread_snapshot[[stock]]
     stock_factor.to_csv(param['path_project']+'\\factors\\'+factor+'\\'+stock+'.csv')
-    
 
 # time sensitive
 
@@ -41,7 +40,6 @@ for stock in spread_snapshot.columns:
 
 
 
-spread.to_csv(param['path_project']+'\\factors\\spread.csv')
 
 spread_diff = spread-spread.shift(1)
 spread_diff.to_csv(param['path_project']+'\\factors\\spread_diff.csv')

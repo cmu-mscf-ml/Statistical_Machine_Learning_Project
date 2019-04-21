@@ -21,9 +21,11 @@ ticks = datetime(2019,4,4,9,30,0,0) + np.arange(int(6.5*3600))*timedelta(0,1,0)
 delta_t = timedelta(0,1,0)
 
 
-exeprice = dataset.groupby(by=['symbol','h_m_s']).last()['tradePrice']
-exeprice = exeprice.reset_index()
-exeprice = exeprice.pivot(index='h_m_s',columns='symbol',values='tradePrice')
-exeprice = exeprice.reindex(ticks)
-exeprice = exeprice.fillna(method='ffill')
-exeprice.to_csv(param['path_project']+'\\factors\\exeprice.csv')
+smart = dataset.groupby(by=['symbol','h_m_s']).last()[['bidSize','bid','ask','askSize']]
+smart = smart['bid']/smart['bidSize']+smart['ask']/smart['askSize']
+smart = smart.reset_index()
+smart = smart.rename(columns={0:'smart'})
+smart = smart.pivot(index='h_m_s',columns='symbol',values='smart')
+smart = smart.reindex(ticks)
+smart = smart.fillna(method='ffill')
+smart.to_csv(param['path_project']+'\\factors\\smart_price.csv')

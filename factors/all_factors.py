@@ -26,3 +26,7 @@ for s in stocks:
         path = '\\'.join([param['path_factors'],f,s]) + '.csv'
         f_data = pd.read_csv(path, header=0, index_col=0)
         f_data.columns = [f]
+        if (len(f_data)!=23400):
+            print('error: '+f)
+        stock_factors = pd.concat([stock_factors,f_data], axis=1, join='outer', sort=True)
+    stock_factors.to_csv(param['path_output']+'\\'+s+'.csv')

@@ -22,8 +22,7 @@ dataset['mid'] = (dataset['ask']+dataset['bid'])/2
 dataset['smart_price'] = (dataset['ask']*dataset['bidSize']+dataset['bid']*dataset['askSize'])/(dataset['bidSize']+dataset['askSize'])
 
 
-s_list = [1,2,5,10,30]
-order_list = [5,10,20,50]
+
 # smartPrice
 factor = 'smartPrice_insensitive'
 os.mkdir(factor)
@@ -40,7 +39,7 @@ for stock in smartPrice.columns:
 
 s_list = [1,2,5,10,30]
 order_list = [5,10,20,50] 
-order_list = [5]
+#order_list = [5]
 # momentum, order
 for ptype in ['mid','smart_price']:
     for s in order_list:
@@ -57,7 +56,30 @@ for ptype in ['mid','smart_price']:
         momentum = momentum.groupby(['h_m_s','symbol']).last()
         momentum = momentum.reset_index()
         momentum = momentum.pivot(index='h_m_s',columns='symbol',values='momentum')
+        momentum = momentum.reindex(ticks) ## !!!
+        momentum = momentum.fillna(method='ffill')
         for stock in momentum.columns:
             stock_factor = momentum[[stock]]
             stock_factor.to_csv(os.path.join(dir_name, stock+'.csv'))
+
+
+# momentum, second
+for ptype in ['mid','smart_price']:
+    price = dataset.groupby(by=['symbol','h_m_s']).last()[ptype]
+    price = price.reset_index()
+    price = price.pivot(index='h_m_s',columns='symbol',values=ptype)
+    price = price.reindex(ticks)
+    price = price.fillna(method='ffill')
+    for s in s_list:
+        dir_name = ptype + '_momentum_' + str(s) + 's'
+        if not os.path.exists(dir_name):
+            os.mkdir(dir_name)
+        
+        momentum = (price-price.shift(s))/price.shift(s)
+        for stock in smartPrice.columns:
+            stock_factor = momentum[[stock]]
+            stock_factor.to_csv(os.path.join(dir_name, stock+'.csv'))
+
+
+
 

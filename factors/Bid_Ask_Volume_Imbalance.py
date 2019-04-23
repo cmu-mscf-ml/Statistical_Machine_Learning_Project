@@ -13,10 +13,13 @@ ticks = datetime(2019,4,4,9,30,0,0) + np.arange(int(6.5*3600))*timedelta(0,1,0)
 delta_t = timedelta(0,1,0)
 '''
 
-# Volume_Imbalance
 
-dataset['size_spread'] = (dataset[dataset['type'] == 'bookChange']['bidSize'] - dataset[dataset['type'] == 'bookChange']['askSize'])/(dataset[dataset['type'] == 'bookChange']['bidSize'] + dataset[dataset['type'] == 'bookChange']['askSize'])
-spread = dataset.groupby(by=['symbol','h_m_s'])['size_spread'].last().reset_index()
+# Volume_Imbalance
+bk_chg = dataset.copy()
+bk_chg = bk_chg.loc[bk_chg['type']=='bookChange']
+bk_chg.index = range(len(bk_chg))
+bk_chg['size_spread'] = (bk_chg['bidSize']-bk_chg['askSize'])/(bk_chg['bidSize']+bk_chg['askSize'])
+spread = bk_chg.groupby(by=['symbol','h_m_s'])['size_spread'].last().reset_index()
 spread = spread.pivot(index='h_m_s',columns='symbol',
                       values='size_spread').reindex(ticks)
 spread.fillna(method = 'ffill', inplace = True)
@@ -26,17 +29,19 @@ spread.to_csv('./factors/Volume_Imbalance.csv')
 
 
 # TRADE SIGN - by time
-
-dataset['trade_sign'] = dataset[dataset['type'] == 'trade']['tradeSide'].map(lambda x: -1 if ' SELL' in x else 1 if ' BUY' in x else 0)
-spread = dataset.groupby(by=['symbol','h_m_s']).sum()['trade_sign'].reset_index()
+trade = dataset.copy()
+trade = trade.loc[trade['type']=='trade']
+trade.index = range(len(trade))
+trade['trade_sign'] = trade['tradeSide'].map(lambda x: -1 if ' SELL' in x else 1 if ' BUY' in x else 0)
+spread = trade.groupby(by=['symbol','h_m_s']).sum()['trade_sign'].reset_index()
 spread = spread.pivot(index='h_m_s',columns='symbol',
                       values='trade_sign').reindex(ticks)
-
 spread.fillna(0, inplace = True)
 
 for column in spread.columns.tolist():
     #print('./factors/trade_sign/'+column+'.csv')
     spread[[column]].to_csv('./factors/trade_sign/'+column+'.csv')
+
 
 spread_2 = spread.ewm(span=2).mean()
 for column in spread_2.columns.tolist():

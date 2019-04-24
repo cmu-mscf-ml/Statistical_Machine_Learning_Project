@@ -33,37 +33,186 @@ param = {# speicify path, should modify to the local path
          
 
 ### Data preprocess ###
+def preprocess(param, write = True):
+    '''
+    Get, preprocess, and store preprocessed data to the read path (same as the
+    data read in)
+    '''
+    # construct continuous trading time at this date
+    param['cts_trade_time'] = datetime.combine(param['date'], param['cts_trade'][0])
+    
+    # read and preprocess data
+    dataset = pd.read_csv(param['read_path']+param['filename'], header=0, index_col=0)
+    
+    # change the form of time
+    dataset['time'] = dataset['time'].apply(lambda t: datetime.strptime(t,
+                                                       '%Y-%m-%d %H:%M:%S.%f'))
+    
+    # discretize based on seconds
+    dataset['h_m_s'] = [datetime(t.year, t.month, t.day, t.hour, 
+           t.minute, t.second) for t in dataset['time']]
+    
+    # get symbol list
+    param['stocks'] = np.array(dataset['symbol'].unique())
+    
+    # constrcut seconds index of a trading day
+    delta_t = timedelta(0,1,0) # one second
+    param['ticks'] = param['cts_trade_time'] + np.arange(int(6.5*3600))*delta_t
+    
+    ### Construct basic features
+    # construct 'spread' information
+    dataset['spread'] = dataset['ask']-dataset['bid']
+    # construct 'mid'
+    dataset['mid'] = (dataset['ask']+dataset['bid'])/2
+    # construct 'smart_price'
+    dataset['smart_price'] = (dataset['ask']*dataset['bidSize']+
+           dataset['bid']*dataset['askSize'])/(dataset['bidSize']+dataset['askSize'])
+    
+    if write:
+        dataset.to_csv(param['read_path']+'Processed.'+param['filename'])
+    
+    return dataset
 
-# construct continuous trading time at this date
-param['cts_trade_time'] = datetime.combine(param['date'], param['cts_trade'][0])
 
-# read and preprocess data
-dataset = pd.read_csv(param['read_path']+param['filename'], header=0, index_col=0)
-
-# change the form of time
-dataset['time'] = dataset['time'].apply(lambda t: datetime.strptime(t,
-                                                   '%Y-%m-%d %H:%M:%S.%f'))
-
-# discretize based on seconds
-dataset['h_m_s'] = [datetime(t.year, t.month, t.day, t.hour, 
-       t.minute, t.second) for t in dataset['time']]
-
-# get symbol list
-param['stocks'] = np.array(dataset['symbol'].unique())
-
-# constrcut seconds index of a trading day
-delta_t = timedelta(0,1,0) # one second
-param['ticks'] = param['cts_trade_time'] + np.arange(int(6.5*3600))*delta_t
-
-# construct 'spread' information
-dataset['spread'] = dataset['ask']-dataset['bid']
-
-
-
-
-
+###############################################################################
 ### Functions to generate factors based on the preprocessed data and store them
 ### into the target path
+    
+
+# factor：smart price and it's momentum 
+def fac_smartPrice(dataset, param):
+    '''
+    Calculate and store smart price related factor;
+    (1) Snapshot smart price
+    (2) Momentum of smart price (order based)
+    '''
+    factor_name1 = 'smart_price_snapshot'
+    factor_name2 = 'smart_price_momentum_'
+
+    ### (1) snaptshot data
+    # file
+    target_path1 = param['write_path']+factor_name1
+    if not os.path.exists(target_path1): 
+        os.mkdir(target_path1)
+    # calculate
+    smartPrice = dataset.groupby(by=['symbol','h_m_s']).last()['smart_price']
+    smartPrice = smartPrice.reset_index()
+    smartPrice = smartPrice.pivot(index='h_m_s',columns='symbol',values='smart_price')
+    smartPrice = smartPrice.reindex(param['ticks'])
+    smartPrice = smartPrice.fillna(method='ffill')
+    # generate and store
+    for stock in smartPrice.columns:
+        stock_factor = smartPrice[[stock]]
+        stock_factor.to_csv(target_path1+'\\'+stock+'.csv')
+    
+    
+    ### (2) momentum data
+    ## (2.1) time-based    
+    for s in param['s_list']:
+        # file
+        target_path21 = param['write_path']+factor_name2+str(s)+'s'
+        if not os.path.exists(target_path21):
+            os.mkdir(target_path21)
+        # calculate
+        momentum = (smartPrice-smartPrice.shift(s))/smartPrice.shift(s)
+        for stock in smartPrice.columns:
+            stock_factor = momentum[[stock]]
+            stock_factor.to_csv(target_path21+'\\'+stock+'.csv')
+
+    ## (2.2) order-based
+    for s in param['order_list']:
+        # file
+        target_path22 = param['write_path']+factor_name2+str(s)+'ord'
+        if not os.path.exists(target_path22):
+            os.mkdir(target_path22)
+        # caculate 
+        for stock, group in dataset.groupby('symbol'):
+            # first get pre-value
+            pre_value  = group[['smart_price']].shift(s)
+            # get h_m_s information
+            pre_value ['h_m_s'] = group['h_m_s']
+            # group by data in the same second, get values
+            pre_value  = pre_value.groupby('h_m_s').last()[['smart_price']]
+            # use full ticks to reindex so that we have all the records
+            pre_value  = pre_value .reindex(param['ticks'])
+            # fill missing values
+            pre_value = pre_value .fillna(method='ffill')
+            
+            # use this prevalue and current value to create momentum factor 
+            stock_factor = (smartPrice[stock]-
+                            pre_value['smart_price'])/pre_value['smart_price'] 
+            # store
+            stock_factor.to_csv(target_path1+'\\'+stock+'.csv')
+    
+    return
+
+# factor：mid-price and it's momentum 
+def fac_midPrice(dataset, param):
+    '''
+    Calculate and store mid price related factor;
+    (1) Snapshot mid price
+    (2) Momentum of mid price (order based)
+    '''
+    factor_name1 = 'mid_snapshot'
+    factor_name2 = 'mid_momentum_'
+
+    ### (1) snaptshot data
+    # file
+    target_path1 = param['write_path']+factor_name1
+    if not os.path.exists(target_path1): 
+        os.mkdir(target_path1)
+    # calculate
+    smartPrice = dataset.groupby(by=['symbol','h_m_s']).last()['mid']
+    smartPrice = smartPrice.reset_index()
+    smartPrice = smartPrice.pivot(index='h_m_s',columns='symbol',values='mid')
+    smartPrice = smartPrice.reindex(param['ticks'])
+    smartPrice = smartPrice.fillna(method='ffill')
+    # generate and store
+    for stock in smartPrice.columns:
+        stock_factor = smartPrice[[stock]]
+        stock_factor.to_csv(target_path1+'\\'+stock+'.csv')
+    
+    
+    ### (2) momentum data
+    ## (2.1) time-based    
+    for s in param['s_list']:
+        # file
+        target_path21 = param['write_path']+factor_name2+str(s)+'s'
+        if not os.path.exists(target_path21):
+            os.mkdir(target_path21)
+        # calculate
+        momentum = (smartPrice-smartPrice.shift(s))/smartPrice.shift(s)
+        for stock in smartPrice.columns:
+            stock_factor = momentum[[stock]]
+            stock_factor.to_csv(target_path21+'\\'+stock+'.csv')
+
+    ## (2.2) order-based
+    for s in param['order_list']:
+        # file
+        target_path22 = param['write_path']+factor_name2+str(s)+'ord'
+        if not os.path.exists(target_path22):
+            os.mkdir(target_path22)
+        # caculate 
+        for stock, group in dataset.groupby('symbol'):
+            # first get pre-value
+            pre_value  = group[['mid']].shift(s)
+            # get h_m_s information
+            pre_value ['h_m_s'] = group['h_m_s']
+            # group by data in the same second, get values
+            pre_value  = pre_value.groupby('h_m_s').last()[['mid']]
+            # use full ticks to reindex so that we have all the records
+            pre_value  = pre_value .reindex(param['ticks'])
+            # fill missing values
+            pre_value = pre_value .fillna(method='ffill')
+            
+            # use this prevalue and current value to create momentum factor 
+            stock_factor = (smartPrice[stock]-
+                            pre_value['mid'])/pre_value['mid'] 
+            # store
+            stock_factor.to_csv(target_path1+'\\'+stock+'.csv')
+    
+    return
+
 
 # spread factor
 def fac_spread(dataset, param, write = True):
@@ -95,6 +244,7 @@ def fac_spread(dataset, param, write = True):
             stock_factor.to_csv(target_path+'\\'+stock+'.csv')
 
     return spread_snapshot
+
 
 # spred difference and average spread factor
 def fac_spread_diff(dataset, param):
@@ -159,5 +309,13 @@ def fac_spread_diff(dataset, param):
             # save
             stock_factor.to_csv(target_path1+'\\'+stock+'.csv')
             stock_factor_diff.to_csv(target_path2+'\\'+stock+'.csv')
+    return
 
 
+################### main ##########################
+dataset = preprocess(param, write = False)
+
+# smart price
+fac_smartPrice(dataset, param)
+# mid price
+fac_midPrice(dataset, param)

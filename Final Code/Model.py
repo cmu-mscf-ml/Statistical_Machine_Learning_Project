@@ -101,7 +101,9 @@ def run_model(stocks, factors, y_horizon, model,
         all_result.append(result)
     return all_result
 
-stocks = ['ABX', 'ACB', 'AEM']
+stocks = ['ABX', 'ACB', 'AEM', 'BAM.A', 'BNS', 'CNQ',
+          'CNR', 'CRON', 'CVE', 'ECA', 'ENB', 'FOOD']
+
 all_factors = [
  'mid_momentum_10ord',
  'mid_momentum_10s',
@@ -164,11 +166,11 @@ all_factors = [
 
 y_horizon = 5
 
-'''
-model = 'random_forest'
 
-results = run_model(stocks, all_factors, y_horizon, model, param, 
-                    max_depth=2, random_state=0, n_estimators=100) #  **model_param
+model = 'random_forest'
+model_param = {'max_depth': 2, 'random_state': 0, 'n_estimators': 100}
+results = run_model(stocks, all_factors, y_horizon, model, param, **model_param) 
+                
 '''
 
 model = ElasticNet
@@ -176,8 +178,13 @@ model_name = 'elastic_net'
 model_param = {'random_state':0,'alpha':1e-2}
 results = run_model(stocks, all_factors, y_horizon, model, param, True, **model_param)
 
+<<<<<<< HEAD
 
 key_results = [[res['stock'],res['test']['score'],res['test']['sharpe']] for 
+=======
+'''
+key_results = [[res['stock'],res['outofsample']['score'],res['outofsample']['sharpe']] for 
+>>>>>>> 99ce04e9bb884a8e07a03b9c0fec43039aac0c06
               res in results]
 
 key_results = pd.DataFrame(columns=['Stock','Score','Sharpe'],data=key_results)

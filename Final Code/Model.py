@@ -12,40 +12,40 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import ElasticNet
 
 param = {'path_model_data': ####### fill your path here ######
-                 'D:\\'
+                 'F:\\Class - Statistical Machine Learning II\\project\\HFT\\'
                  + 'Statistical_Machine_Learning_Project\\'
                  + 'factors\\all_factors\\',
          'train_ratio': 0.6}
 
+def evaluate_model(y_test_fit, y_test, y_train_fit=None, y_train=None):
+    result = {}
+    if (y_train_fit is not None) and (y_train is not None):
+        train_result = {}
+        u = np.sum((y_train-y_train_fit)**2)
+        v = np.sum((y_train-np.mean(y_train))**2)
+        train_result['score'] = 1-u/v
+        train_result['pnl'] = y_train_fit*y_train
+        train_result['revenue'] = np.sum(train_result['pnl'])
+        train_result['sharpe'] = np.mean(train_result['pnl'])/np.std(train_result['pnl'])
+        result['train'] = train_result
     
-def evaluate_model(reg, X_train, y_train, X_test, y_test): 
-    reg.fit(X_train, y_train)
-    
-    y_train_fit = reg.predict(X_train)
-    y_test_fit = reg.predict(X_test)
-    
-    insample_result = {}
-    insample_result['score'] = reg.score(X_train,y_train)
-    insample_result['pnl'] = y_train_fit*y_train
-    insample_result['revenue'] = np.sum(insample_result['pnl'])
-    insample_result['sharpe'] = np.mean(insample_result['pnl'])/np.std(insample_result['pnl'])
-        
-    outofsample_result = {}
-    outofsample_result['score'] = reg.score(X_test,y_test)
-    outofsample_result['pnl'] = y_test_fit*y_test
-    outofsample_result['revenue'] = np.sum(outofsample_result['pnl'])
-    outofsample_result['sharpe'] = np.mean(outofsample_result['pnl'])/np.std(outofsample_result['pnl'])
+    test_result = {}
+    u = np.sum((y_test-y_test_fit)**2)
+    v = np.sum((y_test-np.mean(y_test))**2)
+    test_result['score'] = 1-u/v
+    test_result['pnl'] = y_test_fit*y_test
+    test_result['revenue'] = np.sum(test_result['pnl'])
+    test_result['sharpe'] = np.mean(test_result['pnl'])/np.std(test_result['pnl'])
     # outofsample_result['bench_pnl'] = y_test
     # outofsample_result['bench_sharpe'] = np.mean(y_test)/np.std(y_test)
-    
-    result = {'insample': insample_result, 'outofsample': outofsample_result}
+    result['test'] = test_result
     return result
     
-    
+
 def run_model(stocks, factors, y_horizon, model, 
               param, rolling=False, **model_param):
-    model_dict = {'random_forest': RandomForestRegressor,
-                  'elastic_net': ElasticNet}
+    # model_dict = {'random_forest': RandomForestRegressor,
+    #               'elastic_net': ElasticNet}
     all_result = []
     for stock in stocks:
         # fetch stock's modeling data
@@ -67,23 +67,35 @@ def run_model(stocks, factors, y_horizon, model,
         if rolling:
             train_index = [range(i,i+n_train) for i in range(n_obs-n_train)]
             test_index = range(n_train, n_obs)
-            for train_ind, test_ind in zip(*[train_index, test_index]):
-                X_train, y_train = X.iloc[train_ind], y[train_ind]
-                X_test, y_test = X.iloc[test_ind], y[test_ind]
+            y_test_fit = np.zeros(len(test_index))
+            for i in range(len(train_index)):
+                print(i)
+                train_ind, test_ind = train_index[i], test_index[i]
+                X_train, y_train = X.iloc[train_ind].copy(), y.iloc[train_ind].copy()
+                X_test, y_test = X.iloc[[test_ind]].copy(), y.iloc[test_ind].copy()
                 
-                func = model_dict.get(model, lambda: 'nothing')
-                reg = func(**model_param)
-                result = evaluate_model(reg, X_train, y_train, X_test, y_test)
-                result['stock'] = stock
+                # func = model_dict.get(model, lambda: 'nothing')
+                reg = model(**model_param)
+                reg.fit(X_train, y_train)
+                
+                y_train_fit = reg.predict(X_train)
+                y_test_fit[i] = reg.predict(X_test)[0]
+                
+            y_test = np.array(y.iloc[test_index])
+            result = evaluate_model(y_test_fit, y_test)
+            result['stock'] = stock
            
         else:
             n_obs = len(X)
-            X_train, y_train = X.iloc[:n_train], y[:n_train]
-            X_test, y_test = X.iloc[n_train:], y[n_train:]
+            X_train, y_train = X.iloc[:n_train].copy(), y[:n_train].copy()
+            X_test, y_test = X.iloc[n_train:].copy(), y[n_train:].copy()
             
-            func = model_dict.get(model, lambda: 'nothing')
-            reg = func(**model_param)
-            result = evaluate_model(reg, X_train, y_train, X_test, y_test)
+            # func = model_dict.get(model, lambda: 'nothing')
+            reg = model(**model_param)
+            reg.fit(X_train, y_train)
+            y_train_fit = reg.predict(X_train)
+            y_test_fit = reg.predict(X_test)
+            result = evaluate_model(y_test_fit, y_test, y_train_fit, y_train)
             result['stock'] = stock
             
         all_result.append(result)
@@ -159,14 +171,15 @@ results = run_model(stocks, all_factors, y_horizon, model, param,
                     max_depth=2, random_state=0, n_estimators=100) #  **model_param
 '''
 
-model = 'elastic_net'
+model = ElasticNet
+model_name = 'elastic_net'
 model_param = {'random_state':0,'alpha':1e-2}
-results = run_model(stocks, all_factors, y_horizon, model, param, **model_param)
+results = run_model(stocks, all_factors, y_horizon, model, param, True, **model_param)
 
 
-key_results = [[res['stock'],res['outofsample']['score'],res['outofsample']['sharpe']] for 
+key_results = [[res['stock'],res['test']['score'],res['test']['sharpe']] for 
               res in results]
 
 key_results = pd.DataFrame(columns=['Stock','Score','Sharpe'],data=key_results)
 ## give the result a name
-key_results.name = model+'; '+str(model_param)+'; '+str(y_horizon)+" days"
+key_results.name = model_name+'; '+str(model_param)+'; '+str(y_horizon)+" days"

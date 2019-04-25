@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, time
 import re
 import matplotlib.pyplot as plt 
 
-param = {'path_model_data': 'D:\\2019 Intern Application\\AceTek\\'
+param = {'path_model_data': ### fill path here
                  + 'project\\Statistical_Machine_Learning_Project\\'
                  + 'factors\\all_factors\\',
          'train_ratio': 0.6}

@@ -68,10 +68,8 @@ def preprocess(param, write = True):
     dataset['smart_price'] = (dataset['ask']*dataset['bidSize']+
            dataset['bid']*dataset['askSize'])/(dataset['bidSize']+dataset['askSize'])
     # construct spread of order size
-    dataset['size_spread'] = (dataset[dataset['type'] == 'bookChange']['bidSize'] -
-                              dataset[dataset['type'] == 'bookChange']['askSize']) / (
-                             dataset[dataset['type'] == 'bookChange']['bidSize'] +
-                             dataset[dataset['type'] == 'bookChange']['askSize'])
+    dataset['size_spread'] = (dataset['bidSize'] - dataset['askSize']) / (
+                             dataset['bidSize'] + dataset['askSize'])
     # construct trade sign
     dataset['trade_sign'] = dataset[dataset['type'] == 'trade']['tradeSide'].map(
         lambda x: -1 if ' SELL' in x else 1 if ' BUY' in x else 0)
@@ -327,6 +325,27 @@ def fac_spread_diff(dataset, param):
     return
 
 
+def fac_volimbalance(dataset, param):
+
+    factor_name1 = 'volume_imbalance'
+
+    ### (1) snaptshot data
+    # file
+    target_path1 = param['write_path']+factor_name1
+    if not os.path.exists(target_path1):
+        os.mkdir(target_path1)
+
+    spread = dataset.groupby(by=['symbol', 
+                                 'h_m_s'])['size_spread'].last().reset_index()
+    spread = spread.pivot(index='h_m_s', columns='symbol',
+                          values='size_spread').reindex(param['ticks'])
+    spread.fillna(method='ffill')
+
+    for stock in spread.columns.tolist():
+        spread[[stock]].to_csv(target_path1+'\\'+stock+'.csv')
+
+    return
+
 ################### main ##########################
 dataset = preprocess(param, write = False)
 
@@ -338,3 +357,5 @@ fac_midPrice(dataset, param)
 fac_spread(dataset, param, write = True)
 # difference of spread, mean spread
 fac_spread_diff(dataset, param)
+# volume imbalance
+fac_volimbalance(dataset, param)

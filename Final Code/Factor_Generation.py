@@ -67,6 +67,19 @@ def preprocess(param, write = True):
     # construct 'smart_price'
     dataset['smart_price'] = (dataset['ask']*dataset['bidSize']+
            dataset['bid']*dataset['askSize'])/(dataset['bidSize']+dataset['askSize'])
+    # construct spread of order size
+    dataset['size_spread'] = (dataset[dataset['type'] == 'bookChange']['bidSize'] -
+                              dataset[dataset['type'] == 'bookChange']['askSize']) / (
+                             dataset[dataset['type'] == 'bookChange']['bidSize'] +
+                             dataset[dataset['type'] == 'bookChange']['askSize'])
+    # construct trade sign
+    dataset['trade_sign'] = dataset[dataset['type'] == 'trade']['tradeSide'].map(
+        lambda x: -1 if ' SELL' in x else 1 if ' BUY' in x else 0)
+    # construct transaction 
+    dataset['transaction_spread'] = (dataset[dataset['type'] == 'trade']['tradeSize']) * \
+                                    dataset[dataset['type'] == 'trade']['tradeSide'].map(
+                        lambda x: -1 if ' SELL' in x else 1 if ' BUY' in x else 0)
+
     
     if write:
         dataset.to_csv(param['read_path']+'Processed.'+param['filename'])
@@ -142,7 +155,7 @@ def fac_smartPrice(dataset, param):
             stock_factor = (smartPrice[stock]-
                             pre_value['smart_price'])/pre_value['smart_price'] 
             # store
-            stock_factor.to_csv(target_path1+'\\'+stock+'.csv')
+            stock_factor.to_csv(target_path22+'\\'+stock+'.csv')
     
     return
 
@@ -209,7 +222,7 @@ def fac_midPrice(dataset, param):
             stock_factor = (smartPrice[stock]-
                             pre_value['mid'])/pre_value['mid'] 
             # store
-            stock_factor.to_csv(target_path1+'\\'+stock+'.csv')
+            stock_factor.to_csv(target_path22+'\\'+stock+'.csv')
     
     return
 
@@ -319,3 +332,7 @@ dataset = preprocess(param, write = False)
 fac_smartPrice(dataset, param)
 # mid price
 fac_midPrice(dataset, param)
+
+fac_spread(dataset, param, write = True)
+
+fac_spread_diff(dataset, param)

@@ -155,6 +155,7 @@ def fac_smartPrice(dataset, param):
             stock_factor = (smartPrice[stock]-
                             pre_value['smart_price'])/pre_value['smart_price'] 
             # store
+            stock_factor = pd.DataFrame(stock_factor, columns=[stock])
             stock_factor.to_csv(target_path22+'\\'+stock+'.csv')
     
     return
@@ -222,6 +223,7 @@ def fac_midPrice(dataset, param):
             stock_factor = (smartPrice[stock]-
                             pre_value['mid'])/pre_value['mid'] 
             # store
+            stock_factor = pd.DataFrame(stock_factor, columns=[stock])
             stock_factor.to_csv(target_path22+'\\'+stock+'.csv')
     
     return
@@ -332,7 +334,7 @@ dataset = preprocess(param, write = False)
 fac_smartPrice(dataset, param)
 # mid price
 fac_midPrice(dataset, param)
-
+# spread
 fac_spread(dataset, param, write = True)
-
+# difference of spread, mean spread
 fac_spread_diff(dataset, param)

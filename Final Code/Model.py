@@ -44,8 +44,6 @@ def evaluate_model(y_test_fit, y_test, y_train_fit=None, y_train=None):
 
 def run_model(stocks, factors, y_horizon, model, 
               param, rolling=False, **model_param):
-    # model_dict = {'random_forest': RandomForestRegressor,
-    #               'elastic_net': ElasticNet}
     all_result = []
     for stock in stocks:
         # fetch stock's modeling data
@@ -56,7 +54,6 @@ def run_model(stocks, factors, y_horizon, model,
         del data['h_m_s']
         data = data.dropna()
         X = data.loc[:,factors]
-        # X = data.loc[:,[not c.endswith('_ret') for c in data.columns]]
         ret_name = '_'.join(['fut',str(int(y_horizon)),'ret'])
         y = data[ret_name]
         
@@ -74,7 +71,6 @@ def run_model(stocks, factors, y_horizon, model,
                 X_train, y_train = X.iloc[train_ind].copy(), y.iloc[train_ind].copy()
                 X_test, y_test = X.iloc[[test_ind]].copy(), y.iloc[test_ind].copy()
                 
-                # func = model_dict.get(model, lambda: 'nothing')
                 reg = model(**model_param)
                 reg.fit(X_train, y_train)
                 
@@ -90,7 +86,6 @@ def run_model(stocks, factors, y_horizon, model,
             X_train, y_train = X.iloc[:n_train].copy(), y[:n_train].copy()
             X_test, y_test = X.iloc[n_train:].copy(), y[n_train:].copy()
             
-            # func = model_dict.get(model, lambda: 'nothing')
             reg = model(**model_param)
             reg.fit(X_train, y_train)
             y_train_fit = reg.predict(X_train)
@@ -103,6 +98,7 @@ def run_model(stocks, factors, y_horizon, model,
 
 stocks = ['ABX', 'ACB', 'AEM', 'BAM.A', 'BNS', 'CNQ',
           'CNR', 'CRON', 'CVE', 'ECA', 'ENB', 'FOOD']
+stocks = ['ABX', 'ACB', 'AEM']
 
 all_factors = [
  'mid_momentum_10ord',
@@ -166,26 +162,18 @@ all_factors = [
 
 y_horizon = 5
 
-
-model = 'random_forest'
+'''
+model = RandomForestRegressor
+model_name = 'random_forest'
 model_param = {'max_depth': 2, 'random_state': 0, 'n_estimators': 100}
 results = run_model(stocks, all_factors, y_horizon, model, param, **model_param) 
-                
 '''
-
+         
 model = ElasticNet
 model_name = 'elastic_net'
 model_param = {'random_state':0,'alpha':1e-2}
 results = run_model(stocks, all_factors, y_horizon, model, param, True, **model_param)
 
-<<<<<<< HEAD
-
-key_results = [[res['stock'],res['test']['score'],res['test']['sharpe']] for 
-=======
-'''
-key_results = [[res['stock'],res['outofsample']['score'],res['outofsample']['sharpe']] for 
->>>>>>> 99ce04e9bb884a8e07a03b9c0fec43039aac0c06
-              res in results]
 
 key_results = pd.DataFrame(columns=['Stock','Score','Sharpe'],data=key_results)
 ## give the result a name

@@ -25,13 +25,13 @@ def evaluate_model(reg, X_train, y_train, X_test, y_test):
     y_test_fit = reg.predict(X_test)
     
     insample_result = {}
-    insample_result['accuracy_score'] = reg.score(X_train,y_train)
+    insample_result['score'] = reg.score(X_train,y_train)
     insample_result['pnl'] = y_train_fit*y_train
     insample_result['revenue'] = np.sum(insample_result['pnl'])
     insample_result['sharpe'] = np.mean(insample_result['pnl'])/np.std(insample_result['pnl'])
         
     outofsample_result = {}
-    outofsample_result['accuracy_score'] = reg.score(X_test,y_test)
+    outofsample_result['score'] = reg.score(X_test,y_test)
     outofsample_result['pnl'] = y_test_fit*y_test
     outofsample_result['revenue'] = np.sum(outofsample_result['pnl'])
     outofsample_result['sharpe'] = np.mean(outofsample_result['pnl'])/np.std(outofsample_result['pnl'])
@@ -61,7 +61,7 @@ def run_model(stocks, factors, y_horizon, model,
         y = data[ret_name]
         
         # run model
-        stock_results = []
+
         n_obs = len(X)
         n_train = int(n_obs*param['train_ratio'])
         if rolling:
@@ -74,7 +74,8 @@ def run_model(stocks, factors, y_horizon, model,
                 func = model_dict.get(model, lambda: 'nothing')
                 reg = func(**model_param)
                 result = evaluate_model(reg, X_train, y_train, X_test, y_test)
-                stock_results.append(result)            
+                result['stock'] = stock
+           
         else:
             n_obs = len(X)
             X_train, y_train = X.iloc[:n_train], y[:n_train]
@@ -83,12 +84,12 @@ def run_model(stocks, factors, y_horizon, model,
             func = model_dict.get(model, lambda: 'nothing')
             reg = func(**model_param)
             result = evaluate_model(reg, X_train, y_train, X_test, y_test)
-            stock_results.append(result)
+            result['stock'] = stock
             
-        all_result.append(stock_results)
+        all_result.append(result)
     return all_result
 
-stocks = ['ABX']
+stocks = ['ABX', 'ACB', 'AEM']
 all_factors = [
  'mid_momentum_10ord',
  'mid_momentum_10s',
@@ -151,5 +152,21 @@ all_factors = [
 
 y_horizon = 5
 
-results = run_model(stocks, all_factors, y_horizon, 'random_forest', param, 
+'''
+model = 'random_forest'
+
+results = run_model(stocks, all_factors, y_horizon, model, param, 
                     max_depth=2, random_state=0, n_estimators=100) #  **model_param
+'''
+
+model = 'elastic_net'
+model_param = {'random_state':0,'alpha':1e-2}
+results = run_model(stocks, all_factors, y_horizon, model, param, **model_param)
+
+
+key_results = [[res['stock'],res['outofsample']['score'],res['outofsample']['sharpe']] for 
+              res in results]
+
+key_results = pd.DataFrame(columns=['Stock','Score','Sharpe'],data=key_results)
+## give the result a name
+key_results.name = model+'; '+str(model_param)+'; '+str(y_horizon)+" days"

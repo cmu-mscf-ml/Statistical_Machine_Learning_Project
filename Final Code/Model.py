@@ -168,13 +168,12 @@ model_name = 'random_forest'
 model_param = {'max_depth': 2, 'random_state': 0, 'n_estimators': 100}
 results = run_model(stocks, all_factors, y_horizon, model, param, **model_param) 
 '''
-         
 model = ElasticNet
 model_name = 'elastic_net'
 model_param = {'random_state':0,'alpha':1e-2}
 results = run_model(stocks, all_factors, y_horizon, model, param, True, **model_param)
 
-
+key_results = [[res['stock'],res['test']['score'],res['test']['sharpe']] for res in results]
 key_results = pd.DataFrame(columns=['Stock','Score','Sharpe'],data=key_results)
 ## give the result a name
 key_results.name = model_name+'; '+str(model_param)+'; '+str(y_horizon)+" days"

@@ -1,6 +1,14 @@
 # -*- coding: utf-8 -*-
 '''
 modeling
+
+
+1. ACB, t = 5, 10. perfect performance for both random forest and elastic net, 
+due to volume imbalanced (but t=1,2 not good)
+
+2. 
+
+
 '''
 
 import numpy as np
@@ -9,12 +17,12 @@ from datetime import datetime, timedelta, time
 import re
 import matplotlib.pyplot as plt 
 
-param = {'path_model_data': ### fill path here
+param = {'path_model_data': 'D:\\2019 Intern Application\\AceTek\\'
                  + 'project\\Statistical_Machine_Learning_Project\\'
                  + 'factors\\all_factors\\',
          'train_ratio': 0.6}
 
-stock = 'ABX'
+stock = 'ACB'
 data = pd.read_csv(param['path_model_data']+stock+'.csv', index_col=0)
 fmt = '%Y-%m-%d %H:%M:%S'
 data['h_m_s'] = data['h_m_s'].apply(lambda x: datetime.strptime(x, fmt))
@@ -24,10 +32,10 @@ data = data.dropna()
 
 
 X = data.loc[:,[not c.endswith('_ret') for c in data.columns]]
-X = X[['volume_imbalance','mid_momentum_10ord']]
+# X = X[['volume_imbalance','mid_momentum_10ord']]
 
 
-y = data['fut_10_ret']
+y = data['fut_2_ret']
 
 
 
@@ -46,15 +54,15 @@ y_test = y[int(n_obs*param['train_ratio']):]
 model = 'random_forest'
 from sklearn.ensemble import RandomForestRegressor
 
-reg = RandomForestRegressor(max_depth=3, random_state=0, n_estimators=100)
+reg = RandomForestRegressor(max_depth=2, random_state=0, n_estimators=200)
 reg.fit(X_train, y_train)
+
+
 '''
-
-
 model = 'elasticnet'
 from sklearn.linear_model import ElasticNet
 
-reg = ElasticNet(random_state=0,alpha=0)
+reg = ElasticNet(random_state=0,alpha=1e-2)
 reg.fit(X_train, y_train)
 
 

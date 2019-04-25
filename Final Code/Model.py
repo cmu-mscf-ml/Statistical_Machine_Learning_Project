@@ -9,42 +9,43 @@ from datetime import datetime, timedelta, time
 import re
 import matplotlib.pyplot as plt 
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import ElasticNet
 
 param = {'path_model_data': ####### fill your path here ######
-                 'F:\\Class - Statistical Machine Learning II\\project\\HFT\\'
+                 'D:\\'
                  + 'Statistical_Machine_Learning_Project\\'
                  + 'factors\\all_factors\\',
-         'train_ratio': 0.9}
+         'train_ratio': 0.6}
 
-def random_forest(X_train, y_train, X_test, y_test):
-    reg = RandomForestRegressor(max_depth=2, random_state=0, n_estimators=100)
+    
+def evaluate_model(reg, X_train, y_train, X_test, y_test): 
     reg.fit(X_train, y_train)
+    
     y_train_fit = reg.predict(X_train)
     y_test_fit = reg.predict(X_test)
     
     insample_result = {}
     insample_result['accuracy_score'] = reg.score(X_train,y_train)
-    insample_result['pnl'] = 1000*y_train_fit*y_train
-    insample_result['benchmark'] = y_train
-    insample_result['actual_revenue'] = np.sum(pnl)
-    
+    insample_result['pnl'] = y_train_fit*y_train
+    insample_result['revenue'] = np.sum(insample_result['pnl'])
+    insample_result['sharpe'] = np.mean(insample_result['pnl'])/np.std(insample_result['pnl'])
+        
     outofsample_result = {}
     outofsample_result['accuracy_score'] = reg.score(X_test,y_test)
-    outofsample_result['pnl'] = 1000*y_test_fit*y_test
-    outofsample_result['cum_pnl'] = np.cumsum(outofsample_result['pnl'])
+    outofsample_result['pnl'] = y_test_fit*y_test
     outofsample_result['revenue'] = np.sum(outofsample_result['pnl'])
     outofsample_result['sharpe'] = np.mean(outofsample_result['pnl'])/np.std(outofsample_result['pnl'])
-    outofsample_result['bench_pnl'] = y_test
-    outofsample_result['bench_cum_pnl'] = np.cumsum(outofsample_result['benchmark'])
-    outofsample_result['bench_revenue'] = np.sum(outofsample_result['bench_pnl'])
-    outofsample_result['bench_sharpe'] = np.mean(y_test)/np.std(y_test)
+    # outofsample_result['bench_pnl'] = y_test
+    # outofsample_result['bench_sharpe'] = np.mean(y_test)/np.std(y_test)
     
     result = {'insample': insample_result, 'outofsample': outofsample_result}
     return result
     
     
-def run_model(stocks, factors, y_horizon, model, evaluator, param, rolling=True, **kwargs):
-    model_dict = {'random_forest': random_forest}
+def run_model(stocks, factors, y_horizon, model, 
+              param, rolling=False, **model_param):
+    model_dict = {'random_forest': RandomForestRegressor,
+                  'elastic_net': ElasticNet}
     all_result = []
     for stock in stocks:
         # fetch stock's modeling data
@@ -64,26 +65,32 @@ def run_model(stocks, factors, y_horizon, model, evaluator, param, rolling=True,
         n_obs = len(X)
         n_train = int(n_obs*param['train_ratio'])
         if rolling:
-            train_index = [range(i,i+n_train) for i in range(n-n_train)]
-            test_index = range(n_train, n)
+            train_index = [range(i,i+n_train) for i in range(n_obs-n_train)]
+            test_index = range(n_train, n_obs)
             for train_ind, test_ind in zip(*[train_index, test_index]):
                 X_train, y_train = X.iloc[train_ind], y[train_ind]
                 X_test, y_test = X.iloc[test_ind], y[test_ind]
+                
                 func = model_dict.get(model, lambda: 'nothing')
-                result = func(X_train, y_train, X_test, y_test)
+                reg = func(**model_param)
+                result = evaluate_model(reg, X_train, y_train, X_test, y_test)
                 stock_results.append(result)            
         else:
             n_obs = len(X)
             X_train, y_train = X.iloc[:n_train], y[:n_train]
             X_test, y_test = X.iloc[n_train:], y[n_train:]
+            
             func = model_dict.get(model, lambda: 'nothing')
-            result = func(X_train, y_train, X_test, y_test)
+            reg = func(**model_param)
+            result = evaluate_model(reg, X_train, y_train, X_test, y_test)
             stock_results.append(result)
+            
         all_result.append(stock_results)
     return all_result
 
 stocks = ['ABX']
-all_factors = ['mid_momentum_10ord',
+all_factors = [
+ 'mid_momentum_10ord',
  'mid_momentum_10s',
  'mid_momentum_1s',
  'mid_momentum_20ord',
@@ -141,6 +148,8 @@ all_factors = ['mid_momentum_10ord',
  'transaction_spread_5ord',
  'transaction_spread_5s',
  'volume_imbalance']
+
 y_horizon = 5
-model = 'random_forest'
-results = run_model(stocks, all_factors, y_horizon, model, None, param, True) # , **kwargs)
+
+results = run_model(stocks, all_factors, y_horizon, 'random_forest', param, 
+                    max_depth=2, random_state=0, n_estimators=100) #  **model_param

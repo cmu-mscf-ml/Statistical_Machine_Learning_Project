@@ -15,17 +15,13 @@ delta_t = timedelta(0,1,0)
 
 
 # Volume_Imbalance
-bk_chg = dataset.copy()
-bk_chg = bk_chg.loc[bk_chg['type']=='bookChange']
-bk_chg.index = range(len(bk_chg))
-bk_chg['size_spread'] = (bk_chg['bidSize']-bk_chg['askSize'])/(bk_chg['bidSize']+bk_chg['askSize'])
-spread = bk_chg.groupby(by=['symbol','h_m_s'])['size_spread'].last().reset_index()
+dataset['size_spread'] = (dataset[dataset['type'] == 'bookChange']['bidSize'] - dataset[dataset['type'] == 'bookChange']['askSize'])/(dataset[dataset['type'] == 'bookChange']['bidSize'] + dataset[dataset['type'] == 'bookChange']['askSize'])
+spread = dataset[dataset['type'] == 'bookChange'].groupby(by=['symbol','h_m_s'])['size_spread'].last().reset_index()
 spread = spread.pivot(index='h_m_s',columns='symbol',
                       values='size_spread').reindex(ticks)
 spread.fillna(method = 'ffill', inplace = True)
-spread.to_csv('./factors/Volume_Imbalance.csv')
-
-
+for column in spread.columns.tolist():
+    spread[[column]].to_csv('./factors/volume_imbalance/'+column+'.csv')
 
 
 # TRADE SIGN - by time
@@ -42,20 +38,20 @@ for column in spread.columns.tolist():
     #print('./factors/trade_sign/'+column+'.csv')
     spread[[column]].to_csv('./factors/trade_sign/'+column+'.csv')
 
-
-spread_2 = spread.ewm(span=2).mean()
+spread_2 = spread.ewm(span=2, min_periods = 2).mean()
 for column in spread_2.columns.tolist():
     spread_2[[column]].to_csv('./factors/trade_sign_2/'+column+'.csv')
 
-spread_3 = spread.ewm(span=3).mean()
+spread_3 = spread.ewm(span=3, min_periods = 3).mean()
 for column in spread_3.columns.tolist():
     spread_3[[column]].to_csv('./factors/trade_sign_3/'+column+'.csv')
 
-spread_10 = spread.ewm(span=10).mean()
+spread_10 = spread.ewm(span=10, min_periods = 10).mean()
 for column in spread.columns.tolist():
     spread_10[[column]].to_csv('./factors/trade_sign_10/'+column+'.csv')
 
-spread_30 = spread.ewm(span=30).mean()
+spread_30 = spread.ewm(span=30, min_periods = 30).mean()
+
 for column in spread.columns.tolist():
     spread_30[[column]].to_csv('./factors/trade_sign_30/'+column+'.csv')
 
@@ -72,9 +68,36 @@ for i, factor_name in enumerate(factornames):
         stock_factor = stock_factor.reindex(ticks)
         stock_factor = stock_factor.fillna(method='ffill')
         stock_factor.to_csv('./factors/'+factor_name+'/'+stock+'.csv')
-# TtE SIGN - by time
 
-# transaction - by order
+# Transaction spread - by time
+
+dataset['transaction_spread'] = (dataset[dataset['type'] == 'trade']['tradeSize'])*dataset[dataset['type'] == 'trade']['tradeSide'].map(lambda x: -1 if ' SELL' in x else 1 if ' BUY' in x else 0)
+spread = dataset.groupby(by=['symbol','h_m_s']).sum()['transaction_spread'].reset_index()
+spread = spread.pivot(index='h_m_s',columns='symbol',
+                      values='transaction_spread').reindex(ticks)
+
+spread.fillna(0, inplace = True)
+
+for column in spread.columns.tolist():
+    spread[[column]].to_csv('./factors/transaction_spread_1s/'+column+'.csv')
+
+spread_2 = spread.ewm(span=2, min_periods = 2).mean()
+for column in spread_2.columns.tolist():
+    spread_2[[column]].to_csv('./factors/transaction_spread_2s/'+column+'.csv')
+
+spread_5 = spread.ewm(span=5, min_periods = 5).mean()
+for column in spread_3.columns.tolist():
+    spread_5[[column]].to_csv('./factors/transaction_spread_5s/'+column+'.csv')
+
+spread_10 = spread.ewm(span=10, min_periods = 10).mean()
+for column in spread.columns.tolist():
+    spread_10[[column]].to_csv('./factors/transaction_spread_10s/'+column+'.csv')
+
+spread_30 = spread.ewm(span=30, min_periods = 30).mean()
+for column in spread.columns.tolist():
+    spread_30[[column]].to_csv('./factors/transaction_spread_30s/'+column+'.csv')
+
+# Transaction - by order
 factornames = ['transaction_spread_snapshot', 'transaction_spread_2ord', 'transaction_spread_5ord', 'transaction_spread_10ord']
 num = [1, 2, 5, 10]
 for i, factor_name in enumerate(factornames):

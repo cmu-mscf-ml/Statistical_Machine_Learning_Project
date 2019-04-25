@@ -12,7 +12,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import ElasticNet
 
 param = {'path_model_data': ####### fill your path here ######
-                 'F:\\Class - Statistical Machine Learning II\\project\\HFT\\'
+                 'D:\\'
                  + 'Statistical_Machine_Learning_Project\\'
                  + 'factors\\all_factors\\',
          'train_ratio': 0.6}
@@ -66,7 +66,7 @@ def run_model(stocks, factors, y_horizon, model,
             test_index = range(n_train, n_obs)
             y_test_fit = np.zeros(len(test_index))
             for i in range(len(train_index)):
-                print(i)
+                # print(i)
                 train_ind, test_ind = train_index[i], test_index[i]
                 X_train, y_train = X.iloc[train_ind].copy(), y.iloc[train_ind].copy()
                 X_test, y_test = X.iloc[[test_ind]].copy(), y.iloc[test_ind].copy()
@@ -98,7 +98,7 @@ def run_model(stocks, factors, y_horizon, model,
 
 stocks = ['ABX', 'ACB', 'AEM', 'BAM.A', 'BNS', 'CNQ',
           'CNR', 'CRON', 'CVE', 'ECA', 'ENB', 'FOOD']
-stocks = ['ABX', 'ACB', 'AEM']
+
 
 all_factors = [
  'mid_momentum_10ord',
@@ -110,7 +110,6 @@ all_factors = [
  'mid_momentum_50ord',
  'mid_momentum_5ord',
  'mid_momentum_5s',
- 'smartPrice_insensitive',
  'smartPrice_snapshot',
  'smart_price_momentum_10ord',
  'smart_price_momentum_10s',

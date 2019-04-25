@@ -9,19 +9,12 @@ from datetime import datetime, timedelta, time
 import re
 import matplotlib.pyplot as plt 
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import TimeSeriesSplit
 
 param = {'path_model_data': ####### fill your path here ######
                  'F:\\Class - Statistical Machine Learning II\\project\\HFT\\'
                  + 'Statistical_Machine_Learning_Project\\'
                  + 'factors\\all_factors\\',
-         'train_ratio': 0.6}
-
-
-for train_index, test_index in tscv.split(X):
-    print("TRAIN:", train_index, "TEST:", test_index)
-    X_train, X_test = X[train_index], X[test_index]
-    y_train, y_test = y[train_index], y[test_index]
+         'train_ratio': 0.9}
 
 def random_forest(X_train, y_train, X_test, y_test):
     reg = RandomForestRegressor(max_depth=2, random_state=0, n_estimators=100)
@@ -50,7 +43,7 @@ def random_forest(X_train, y_train, X_test, y_test):
     return result
     
     
-def run_model(stocks, factors, y_horizon, model, rolling=True, evaluator, param, **kwargs):
+def run_model(stocks, factors, y_horizon, model, evaluator, param, rolling=True, **kwargs):
     model_dict = {'random_forest': random_forest}
     all_result = []
     for stock in stocks:
@@ -74,28 +67,80 @@ def run_model(stocks, factors, y_horizon, model, rolling=True, evaluator, param,
             train_index = [range(i,i+n_train) for i in range(n-n_train)]
             test_index = range(n_train, n)
             for train_ind, test_ind in zip(*[train_index, test_index]):
-                X_train = X.iloc[train_ind]
-                y_train = y[train_ind]
-                X_test = X.iloc[test_ind]
-                y_test = y[test_ind]
+                X_train, y_train = X.iloc[train_ind], y[train_ind]
+                X_test, y_test = X.iloc[test_ind], y[test_ind]
                 func = model_dict.get(model, lambda: 'nothing')
                 result = func(X_train, y_train, X_test, y_test)
                 stock_results.append(result)            
         else:
             n_obs = len(X)
-            X_train = X.iloc[:n_train]
-            y_train = y[:n_train]
-            X_test = X.iloc[n_train:]
-            y_test = y[n_train:]
+            X_train, y_train = X.iloc[:n_train], y[:n_train]
+            X_test, y_test = X.iloc[n_train:], y[n_train:]
             func = model_dict.get(model, lambda: 'nothing')
             result = func(X_train, y_train, X_test, y_test)
             stock_results.append(result)
         all_result.append(stock_results)
-    return all_results
-    
-    
-    
-    
-    
-    
-    
+    return all_result
+
+stocks = ['ABX']
+all_factors = ['mid_momentum_10ord',
+ 'mid_momentum_10s',
+ 'mid_momentum_1s',
+ 'mid_momentum_20ord',
+ 'mid_momentum_2s',
+ 'mid_momentum_30s',
+ 'mid_momentum_50ord',
+ 'mid_momentum_5ord',
+ 'mid_momentum_5s',
+ 'smartPrice_insensitive',
+ 'smartPrice_snapshot',
+ 'smart_price_momentum_10ord',
+ 'smart_price_momentum_10s',
+ 'smart_price_momentum_1s',
+ 'smart_price_momentum_20ord',
+ 'smart_price_momentum_2s',
+ 'smart_price_momentum_30s',
+ 'smart_price_momentum_50ord',
+ 'smart_price_momentum_5ord',
+ 'smart_price_momentum_5s',
+ 'spread_10ord',
+ 'spread_10s',
+ 'spread_1s',
+ 'spread_20ord',
+ 'spread_2s',
+ 'spread_30s',
+ 'spread_50ord',
+ 'spread_5ord',
+ 'spread_5s',
+ 'spread_diff_10ord',
+ 'spread_diff_10s',
+ 'spread_diff_1s',
+ 'spread_diff_20ord',
+ 'spread_diff_2s',
+ 'spread_diff_30s',
+ 'spread_diff_50ord',
+ 'spread_diff_5ord',
+ 'spread_diff_5s',
+ 'spread_snapshot',
+ 'trade_sign_10ord',
+ 'trade_sign_10s',
+ 'trade_sign_1ord',
+ 'trade_sign_1s',
+ 'trade_sign_2ord',
+ 'trade_sign_2s',
+ 'trade_sign_30s',
+ 'trade_sign_5ord',
+ 'trade_sign_5s',
+ 'transaction_spread_10ord',
+ 'transaction_spread_10s',
+ 'transaction_spread_1ord',
+ 'transaction_spread_1s',
+ 'transaction_spread_2ord',
+ 'transaction_spread_2s',
+ 'transaction_spread_30s',
+ 'transaction_spread_5ord',
+ 'transaction_spread_5s',
+ 'volume_imbalance']
+y_horizon = 5
+model = 'random_forest'
+results = run_model(stocks, all_factors, y_horizon, model, None, param, True) # , **kwargs)

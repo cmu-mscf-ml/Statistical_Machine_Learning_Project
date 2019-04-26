@@ -128,6 +128,10 @@ y_horizon = 5
 
 #############  Research ####################
 '''
+The code below is process-oriented and can be a litte messy
+There are some code re-using (copy and paste)
+
+
 First try random forest.
 It's complex and have selection power.
 '''
@@ -147,10 +151,177 @@ key_results.name = model_name+'_'+str(model_param)+'_'+str(y_horizon)+" days"
 # is even lower than 0.01
 stock_subset = key_results.loc[key_results['Score_train']>0.01]['Stock']
 
+print(stock_subset)
+# ACB, CRON, ECA, FOOD, PVG, SHOP, TECK.B are good
 
-'''
-model = ElasticNet
-model_name = 'elastic_net'
-model_param = {'random_state':0,'alpha':1e-3}
-results = run_model(stocks, all_factors, y_horizon, model, param, False, **model_param)
-'''
+# Look at each’s feature importance
+factors = all_factors
+subset_importance = pd.DataFrame(columns=factors,
+                                 data=np.zeros((len(stock_subset),len(factors))))
+subset_importance.index = stock_subset.values
+for stock in stock_subset.values:
+    # fetch stock's modeling data
+    data = pd.read_csv(param['path_model_data']+stock+'.csv', index_col=0)
+    fmt = '%Y-%m-%d %H:%M:%S'
+    data['h_m_s'] = data['h_m_s'].apply(lambda x: datetime.strptime(x,fmt))
+    data.index = data['h_m_s']
+    del data['h_m_s']
+    data = data.dropna()
+    X = data.loc[:,factors]
+    ret_name = '_'.join(['fut',str(int(y_horizon)),'ret'])
+    y = data[ret_name]
+        
+    # run model
+    n_obs = len(X)
+    n_train = int(n_obs*param['train_ratio'])
+
+    X_train, y_train = X.iloc[:n_train].copy(), y[:n_train].copy()
+    X_test, y_test = X.iloc[n_train:].copy(), y[n_train:].copy()
+            
+    reg = model(**model_param)
+    reg.fit(X_train, y_train)
+    subset_importance.loc[stock] = reg.feature_importances_
+
+# select the ones with feature importances higher than 0.01
+# for the chosen model, we use random forest to refit it
+sub_stocks = stock_subset.values
+sub_results = []
+
+for stock in sub_stocks:
+    # print(stock)
+    subset_features = subset_importance.columns[subset_importance.loc[stock]>0.01].values
+    sub_results.append(run_model([stock], subset_features, y_horizon, model, param, **model_param)[0]) 
+
+sub_key_results = [[res['stock'],res['train']['score'],res['train']['sharpe'],
+                res['test']['score'],res['test']['sharpe']] for res in sub_results]
+
+sub_key_results = pd.DataFrame(columns=['Stock','Score_train','Sharpe_train',
+                                    'Score_test','Sharpe_test'],data=sub_key_results)
+
+################## single research ##########
+######### ACB
+stock = 'ACB'
+factors = ['volum_imbalance']
+model = RandomForestRegressor
+model_name = 'random_forest'
+model_param = {'max_depth': 2, 'random_state': 0, 'n_estimators': 100}
+# fetch stock's modeling data
+data = pd.read_csv(param['path_model_data']+stock+'.csv', index_col=0)
+fmt = '%Y-%m-%d %H:%M:%S'
+data['h_m_s'] = data['h_m_s'].apply(lambda x: datetime.strptime(x,fmt))
+data.index = data['h_m_s']
+del data['h_m_s']
+data = data.dropna()
+X = data.loc[:,factors]
+ret_name = '_'.join(['fut',str(int(y_horizon)),'ret'])
+y = data[ret_name]
+    
+# run model
+n_obs = len(X)
+n_train = int(n_obs*param['train_ratio'])
+
+X_train, y_train = X.iloc[:n_train].copy(), y[:n_train].copy()
+X_test, y_test = X.iloc[n_train:].copy(), y[n_train:].copy()
+            
+reg = model(**model_param)
+reg.fit(X_train, y_train)
+y_train_fit = reg.predict(X_train)
+y_test_fit = reg.predict(X_test)
+result = evaluate_model(y_test_fit, y_test, y_train_fit, y_train)
+
+
+## result demo ##
+
+plt.plot(np.cumsum(result['train']['pnl']),label='train')
+train_revenue = np.cumsum(result['train']['pnl'])[-1]
+
+plt.plot(train_revenue+np.cumsum(result['test']['pnl']),label='test')
+plt.title("ACB, PnL")
+plt.legend()
+plt.show()
+
+
+########## CRON
+stock = 'CRON'
+factors = ['mid_momentum_50ord', 'spread_30s', 'volum_imbalance']
+model = RandomForestRegressor
+model_name = 'random_forest'
+model_param = {'max_depth': 2, 'random_state': 0, 'n_estimators': 100}
+# fetch stock's modeling data
+data = pd.read_csv(param['path_model_data']+stock+'.csv', index_col=0)
+fmt = '%Y-%m-%d %H:%M:%S'
+data['h_m_s'] = data['h_m_s'].apply(lambda x: datetime.strptime(x,fmt))
+data.index = data['h_m_s']
+del data['h_m_s']
+data = data.dropna()
+X = data.loc[:,factors]
+ret_name = '_'.join(['fut',str(int(y_horizon)),'ret'])
+y = data[ret_name]
+    
+# run model
+n_obs = len(X)
+n_train = int(n_obs*param['train_ratio'])
+
+X_train, y_train = X.iloc[:n_train].copy(), y[:n_train].copy()
+X_test, y_test = X.iloc[n_train:].copy(), y[n_train:].copy()
+            
+reg = model(**model_param)
+reg.fit(X_train, y_train)
+y_train_fit = reg.predict(X_train)
+y_test_fit = reg.predict(X_test)
+result = evaluate_model(y_test_fit, y_test, y_train_fit, y_train)
+
+
+## result demo ##
+
+plt.plot(np.cumsum(result['train']['pnl']),label='train')
+train_revenue = np.cumsum(result['train']['pnl'])[-1]
+
+plt.plot(train_revenue+np.cumsum(result['test']['pnl']),label='test')
+plt.title("CRON, PnL")
+plt.legend()
+plt.show()
+
+
+
+########## PVG
+stock = 'PVG'
+factors = ['mid_momentum_50ord', 'mid_snapshot', 'spread_10s']
+model = RandomForestRegressor
+model_name = 'random_forest'
+model_param = {'max_depth': 2, 'random_state': 0, 'n_estimators': 100}
+# fetch stock's modeling data
+data = pd.read_csv(param['path_model_data']+stock+'.csv', index_col=0)
+fmt = '%Y-%m-%d %H:%M:%S'
+data['h_m_s'] = data['h_m_s'].apply(lambda x: datetime.strptime(x,fmt))
+data.index = data['h_m_s']
+del data['h_m_s']
+data = data.dropna()
+X = data.loc[:,factors]
+ret_name = '_'.join(['fut',str(int(y_horizon)),'ret'])
+y = data[ret_name]
+    
+# run model
+n_obs = len(X)
+n_train = int(n_obs*param['train_ratio'])
+
+X_train, y_train = X.iloc[:n_train].copy(), y[:n_train].copy()
+X_test, y_test = X.iloc[n_train:].copy(), y[n_train:].copy()
+            
+reg = model(**model_param)
+reg.fit(X_train, y_train)
+y_train_fit = reg.predict(X_train)
+y_test_fit = reg.predict(X_test)
+result = evaluate_model(y_test_fit, y_test, y_train_fit, y_train)
+
+
+## result demo ##
+
+plt.plot(np.cumsum(result['train']['pnl']),label='train')
+train_revenue = np.cumsum(result['train']['pnl'])[-1]
+
+plt.plot(train_revenue+np.cumsum(result['test']['pnl']),label='test')
+plt.title("CRON, PnL")
+plt.legend()
+plt.show()
+

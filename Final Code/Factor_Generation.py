@@ -21,10 +21,11 @@ param = {# speicify path, should modify to the local path
          # 'read_path': 'D:\\Project\\data\\',
          'read_path': 'F:\\Class - Statistical Machine Learning II\\project\\HFT\\1_data_cleaning\\',
          # 'write_path': 'D:\\Project\\data\\'+'factors\\',
-         'write_path': 'F:\\Class - Statistical Machine Learning II\\project\\HFT\\Statistical_Machine_Learning_Project\\factors_0405\\',
+         # 'write_path': 'F:\\Class - Statistical Machine Learning II\\project\\HFT\\Statistical_Machine_Learning_Project\\factors_0405\\',
+         'write_path': 'F:\\New Folder2\\',
          # specify file names and current time, should modify based on the data's date
-         'filename': 'L1.cleaned.20190405.csv',
-         'date': date(2019,4,5),
+         'filename': 'L1.cleaned.20190404.csv',
+         'date': date(2019,4,4),
          # continuous trading time
          'cts_trade': [time(9,30,0), time(16,0,0)],
          # time horizons to construct factors
@@ -56,7 +57,6 @@ def preprocess(param, write = True):
     
     # get symbol list
     param['stocks'] = np.array(dataset['symbol'].unique())
-    print(param['stocks'])
     
     # constrcut seconds index of a trading day
     delta_t = timedelta(0,1,0) # one second

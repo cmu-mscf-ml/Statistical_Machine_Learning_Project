@@ -42,7 +42,7 @@ data = data.sort_values(by=['time', 'seqnum'], ascending=True)
 data.index = range(len(data))
 
 # save
-data.to_csv(param['path_output']+'L1.'+param['date']+'.csv')
+# data.to_csv(param['path_output']+'L1.'+param['date']+'.csv')
 
 # extract records within continuous trading period
 date_ = datetime.strptime(param['date'], '%Y%m%d')
@@ -66,7 +66,7 @@ data_filtered.index = range(len(data_filtered))
 '''
 
 # extract certain stocks； ['ACB','CRON','PVG']
-stocks = ['ACB','CRON','PVG']
+stocks = ['ACB','CRON','PVG', 'ECA']
 data_filtered = None
 for s in stocks:
     subdata = data.loc[data['symbol']==s]

@@ -11,7 +11,7 @@ param = {'path_init_data': 'F:\\Class - Statistical Machine Learning II\\'
              + 'project\\HFT\\initial_data\\',
          'path_output': 'F:\\Class - Statistical Machine Learning II\\'
              + 'project\\HFT\\1_data_cleaning\\',
-         'date': '20190404'}
+         'date': '20190405'}
 
 # load L1 trade data
 trade = pd.read_csv(param['path_init_data']+'L1Trade.'+param['date']+'.csv',
@@ -45,13 +45,14 @@ data.index = range(len(data))
 data.to_csv(param['path_output']+'L1.'+param['date']+'.csv')
 
 # extract records within continuous trading period
-date_ = param['date'].strftime('%Y%m%d')
+date_ = datetime.strptime(param['date'], '%Y%m%d')
 cts_trade = [datetime.combine(date_, time(9,30,0)), 
              datetime.combine(date_, time(16,0,0))]
 n_seconds = int(6.5*3600)
 data = data.loc[(data['time']>=cts_trade[0]) & (data['time']<=cts_trade[1])]
 data.index = range(len(data))
 
+'''
 # extract stocks with enough records
 cnt_threshold = n_seconds*3
 records_cnt = data.groupby('symbol').count()['time']
@@ -62,6 +63,17 @@ for s in stocks:
     subdata.indx = range(len(subdata))
     data_filtered = pd.concat([data_filtered,subdata], axis=0)
 data_filtered.index = range(len(data_filtered))
+'''
+
+# extract certain stocks； ['ACB','CRON','PVG']
+stocks = ['ACB','CRON','PVG']
+data_filtered = None
+for s in stocks:
+    subdata = data.loc[data['symbol']==s]
+    subdata.indx = range(len(subdata))
+    data_filtered = pd.concat([data_filtered,subdata], axis=0)
+data_filtered.index = range(len(data_filtered))
+
 
 # save
 data_filtered.to_csv(param['path_output']+'L1.cleaned.'+param['date']+'.csv')

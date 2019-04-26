@@ -13,12 +13,12 @@ from sklearn.svm import SVR
 from sklearn.linear_model import Ridge
 
 param = {'path_model_data': ####### fill your path here ######
-                 'D:\\' + 'Statistical_Machine_Learning_Project\\'
-                 + 'factors\\all_factors\\',
+                 'D:\\Project\\'
+                 + 'Data\\factors\\all_factors\\',
          'train_ratio': 0.6,
          'path_test_data': ####### fill your path here ######
-             'D:\\' + 'Statistical_Machine_Learning_Project\\'
-                 + 'factors_0405\\all_factors\\'}
+             'D:\\Project\\'
+                 + 'Data\\factors_0405\\all_factors\\'}
 
 def evaluate_model(y_test_fit, y_test, y_train_fit=None, y_train=None):
     result = {}
@@ -425,9 +425,9 @@ rf_PVG_test = report_single_stock_test(stock, factors, model, **model_param)
 ###5. ECA, LR
 stock = 'ECA'
 factors = ['volum_imbalance']
-lr_ACB_test = report_single_stock_test(stock, factors, Ridge, alpha=1, normalize=True)
+lr_ECA_test = report_single_stock_test(stock, factors, Ridge, alpha=1, normalize=True)
 
 ### 6. PVG, LR
 stock = 'PVG'
 factors = ['volum_imbalance']
-lr_ACB_test = report_single_stock_test(stock, factors, Ridge, alpha=1, normalize=True)
+lr_PVG_test = report_single_stock_test(stock, factors, Ridge, alpha=0.1, normalize=True)

@@ -96,8 +96,10 @@ def run_model(stocks, factors, y_horizon, model,
         all_result.append(result)
     return all_result
 
-stocks = ['ABX', 'ACB', 'AEM', 'BAM.A', 'BNS', 'CNQ',
-          'CNR', 'CRON', 'CVE', 'ECA', 'ENB', 'FOOD']
+stocks = ['ABX', 'ACB', 'AEM', 'BAM.A', 'BNS', 'CNQ', 'CNR', 'CRON', 'CVE',
+       'ECA', 'ENB', 'FOOD', 'G', 'HQU', 'HSD', 'LUG', 'MFC', 'PTG',
+       'PVG', 'RY', 'SHOP', 'SMU.UN', 'SU', 'TD', 'TECK.B', 'WPM', 'XIU',
+       'XSP']
 
 
 all_factors = [
@@ -161,7 +163,7 @@ all_factors = [
 
 y_horizon = 5
 
-'''
+
 model = RandomForestRegressor
 model_name = 'random_forest'
 model_param = {'max_depth': 2, 'random_state': 0, 'n_estimators': 100}
@@ -169,10 +171,13 @@ results = run_model(stocks, all_factors, y_horizon, model, param, **model_param)
 '''
 model = ElasticNet
 model_name = 'elastic_net'
-model_param = {'random_state':0,'alpha':1e-2}
-results = run_model(stocks, all_factors, y_horizon, model, param, True, **model_param)
-
-key_results = [[res['stock'],res['test']['score'],res['test']['sharpe']] for res in results]
-key_results = pd.DataFrame(columns=['Stock','Score','Sharpe'],data=key_results)
+model_param = {'random_state':0,'alpha':1e-3}
+results = run_model(stocks, all_factors, y_horizon, model, param, False, **model_param)
+'''
+key_results = [[res['stock'],res['train']['score'],res['train']['sharpe'],
+                res['test']['score'],res['test']['sharpe']] for res in results]
+key_results = pd.DataFrame(columns=['Stock','Score_train','Sharpe_train',
+                                    'Score_test','Sharpe_test'],data=key_results)
 ## give the result a name
-key_results.name = model_name+'; '+str(model_param)+'; '+str(y_horizon)+" days"
+key_results.name = model_name+'_'+str(model_param)+'_'+str(y_horizon)+" days"
+

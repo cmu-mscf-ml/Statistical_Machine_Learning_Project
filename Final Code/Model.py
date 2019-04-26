@@ -240,6 +240,11 @@ plt.title("ACB, PnL")
 plt.legend()
 plt.show()
 
+print("ACB:")
+print("Train Score: ", round(result['train']['score'],5))
+print("Train Sharpe: ", round(result['train']['sharpe'],5))
+print("Test Score: ", round(result['test']['score'],5))
+print("Test Sharpe: ", round(result['test']['sharpe'],5))
 
 ########## CRON
 stock = 'CRON'
@@ -282,7 +287,11 @@ plt.title("CRON, PnL")
 plt.legend()
 plt.show()
 
-
+print("Cron:")
+print("Train Score: ", round(result['train']['score'],5))
+print("Train Sharpe: ", round(result['train']['sharpe'],5))
+print("Test Score: ", round(result['test']['score'],5))
+print("Test Sharpe: ", round(result['test']['sharpe'],5))
 
 ########## PVG
 stock = 'PVG'
@@ -321,7 +330,14 @@ plt.plot(np.cumsum(result['train']['pnl']),label='train')
 train_revenue = np.cumsum(result['train']['pnl'])[-1]
 
 plt.plot(train_revenue+np.cumsum(result['test']['pnl']),label='test')
-plt.title("CRON, PnL")
+plt.title("PVG, PnL")
 plt.legend()
 plt.show()
 
+print("PVG:")
+print("Train Score: ", round(result['train']['score'],5))
+print("Train Sharpe: ", round(result['train']['sharpe'],5))
+print("Test Score: ", round(result['test']['score'],5))
+print("Test Sharpe: ", round(result['test']['sharpe'],5))
+
+##### Test on Apr. 5

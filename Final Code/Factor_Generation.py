@@ -466,12 +466,10 @@ fac_smartPrice(dataset, param)
 # mid price
 fac_midPrice(dataset, param)
 # spread
-fac_spread(dataset, param, write = True)
+fac_spread(dataset, param, write=True)
 # difference of spread, mean spread
 fac_spread_diff(dataset, param)
 # volume imbalance
-fac_volimbalance(dataset, param)
-fac_spread_diff(dataset, param)
 fac_volimbalance(dataset, param)
 fac_trade_sign(dataset, param)
 fac_trans_spread(dataset, param)

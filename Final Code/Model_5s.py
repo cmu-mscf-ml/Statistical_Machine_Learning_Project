@@ -13,10 +13,12 @@ from sklearn.svm import SVR
 from sklearn.linear_model import Ridge
 
 param = {'path_model_data': ####### fill your path here ######
-                 'D:\\'
-                 + 'Statistical_Machine_Learning_Project\\'
+                 'D:\\' + 'Statistical_Machine_Learning_Project\\'
                  + 'factors\\all_factors\\',
-         'train_ratio': 0.6}
+         'train_ratio': 0.6,
+         'path_test_data': ####### fill your path here ######
+             'D:\\' + 'Statistical_Machine_Learning_Project\\'
+                 + 'factors_0405\\all_factors\\'}
 
 def evaluate_model(y_test_fit, y_test, y_train_fit=None, y_train=None):
     result = {}
@@ -282,7 +284,7 @@ factors = ['mid_momentum_50ord', 'spread_30s', 'volum_imbalance']
 
 rf_cron = report_single_stock(stock, factors, model, **model_param)
 
-########## PVG
+### 2.1.3 PVG
 stock = 'PVG'
 factors = ['mid_momentum_50ord', 'mid_snapshot', 'spread_10s']
 
@@ -351,4 +353,81 @@ ridge_PVG = report_single_stock(stock, factors, Ridge, alpha=1e-1, normalize=Tru
 
 
 
-##### Test on Apr. 5
+################### Test on Apr. 5 ###################
+y_horizon = 5
+
+def stock_process_test(stock, factors, y_horizon, param):
+    # fetch stock's modeling data
+    data = pd.read_csv(param['path_test_data']+stock+'.csv', index_col=0)
+    fmt = '%Y-%m-%d %H:%M:%S'
+    data['h_m_s'] = data['h_m_s'].apply(lambda x: datetime.strptime(x,fmt))
+    data.index = data['h_m_s']
+    del data['h_m_s']
+    data = data.dropna()
+    X = data.loc[:,factors]
+    ret_name = '_'.join(['fut',str(int(y_horizon)),'ret'])
+    y = data[ret_name]
+    return {'X':X,'y':y}
+    
+def report_single_stock_test(stock, factors, model, **model_param):
+    tmp = stock_process_test(stock, factors, y_horizon, param)
+    X = tmp['X']
+    y = tmp['y']
+    # run model
+    n_obs = len(X)
+    n_train = int(n_obs*param['train_ratio'])
+    X_train, y_train = X.iloc[:n_train].copy(), y[:n_train].copy()
+    X_test, y_test = X.iloc[n_train:].copy(), y[n_train:].copy()
+    reg = model(**model_param)
+    reg.fit(X_train, y_train)
+    y_train_fit = reg.predict(X_train)
+    y_test_fit = reg.predict(X_test)
+    result = evaluate_model(y_test_fit, y_test, y_train_fit, y_train)
+    ## result demo ##
+    plt.plot(np.cumsum(result['train']['pnl']),label='train')
+    train_revenue = np.cumsum(result['train']['pnl'])[-1]
+    plt.plot(train_revenue+np.cumsum(result['test']['pnl']),label='test')
+    plt.title(stock + ", PnL")
+    plt.legend()
+    plt.show()
+    
+    print(stock+":")
+    print("Train Score: ", round(result['train']['score'],5))
+    print("Train Sharpe: ", round(result['train']['sharpe'],5))
+    print("Test Score: ", round(result['test']['score'],5))
+    print("Test Sharpe: ", round(result['test']['sharpe'],5))
+
+
+    return reg, result
+
+
+####  1. ACB, RF
+stock = 'ACB'
+factors = ['volum_imbalance']
+model = RandomForestRegressor
+model_param = {'max_depth': 2, 'n_estimators': 100, 'random_state': 0}
+rf_ACB_test = report_single_stock_test(stock, factors, model, **model_param)
+
+#### 2. ACB LR
+factors = ['volum_imbalance']
+lr_ACB_test = report_single_stock_test(stock, factors, Ridge, alpha=1, normalize=True)
+
+#### 3. CRON, RF
+stock = 'CRON'
+factors = ['mid_momentum_50ord', 'spread_30s', 'volum_imbalance']
+rf_cron_test = report_single_stock_test(stock, factors, model, **model_param)
+
+### 4. PVG, RF
+stock = 'PVG'
+factors = ['mid_momentum_50ord', 'mid_snapshot', 'spread_10s']
+rf_PVG_test = report_single_stock_test(stock, factors, model, **model_param)
+
+###5. ECA, LR
+stock = 'ECA'
+factors = ['volum_imbalance']
+lr_ACB_test = report_single_stock_test(stock, factors, Ridge, alpha=1, normalize=True)
+
+### 6. PVG, LR
+stock = 'PVG'
+factors = ['volum_imbalance']
+lr_ACB_test = report_single_stock_test(stock, factors, Ridge, alpha=1, normalize=True)

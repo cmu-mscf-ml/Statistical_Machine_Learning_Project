@@ -18,11 +18,13 @@ import os
 
 # relevant params
 param = {# speicify path, should modify to the local path
-         'read_path': 'D:\\Project\\data\\',
-         'write_path': 'D:\\Project\\data\\'+'factors\\',
+         # 'read_path': 'D:\\Project\\data\\',
+         'read_path': 'F:\\Class - Statistical Machine Learning II\\project\\HFT\\1_data_cleaning\\',
+         # 'write_path': 'D:\\Project\\data\\'+'factors\\',
+         'write_path': 'F:\\New folder\\',
          # specify file names and current time, should modify based on the data's date
-         'filename': 'L1.cleaned.20190404.csv',
-         'date': date(2019,4,4),
+         'filename': 'L1.cleaned.20190405.csv',
+         'date': date(2019,4,5),
          # continuous trading time
          'cts_trade': [time(9,30,0), time(16,0,0)],
          # time horizons to construct factors
@@ -324,10 +326,9 @@ def fac_spread_diff(dataset, param):
             stock_factor_diff.to_csv(target_path2+'\\'+stock+'.csv')
     return
 
-
 def fac_volimbalance(dataset, param):
 
-    factor_name1 = 'volume_imbalance'
+    factor_name1 = 'volum_imbalance'
 
     ### (1) snaptshot data
     # file
@@ -335,15 +336,126 @@ def fac_volimbalance(dataset, param):
     if not os.path.exists(target_path1):
         os.mkdir(target_path1)
 
-    spread = dataset.groupby(by=['symbol', 
-                                 'h_m_s'])['size_spread'].last().reset_index()
+    spread = dataset.groupby(by=['symbol', 'h_m_s'])[
+        'size_spread'].last().reset_index()
     spread = spread.pivot(index='h_m_s', columns='symbol',
                           values='size_spread').reindex(param['ticks'])
-    spread.fillna(method='ffill')
+    spread = spread.fillna(method='ffill')
 
     for stock in spread.columns.tolist():
         spread[[stock]].to_csv(target_path1+'\\'+stock+'.csv')
 
+    return
+
+
+def fac_trade_sign(dataset, param):
+    '''
+    Calculate spread difference factor;
+    Current value - recent mean value;
+    This is order-based data;
+    Meanwhile, store recent spread mean values as another factor
+    '''
+    factor_name1 = 'trade_sign_'
+
+    ## (1) time-based
+    # construct a "group by" object based on stock symbol and the second it is in
+    data = dataset.groupby(by=['symbol','h_m_s'])
+
+    # pre-calculate
+    factor = data.sum()['trade_sign']
+    factor = factor.reset_index()
+    factor = factor.pivot(index='h_m_s',columns='symbol',values='trade_sign')
+    factor = factor.reindex(param['ticks'])
+    factor = factor.fillna(0)
+
+    for s in param['trade_list']:
+        # create filefolder
+        target_path1 = param['write_path'] + factor_name1 + str(s) + 's'
+        if not os.path.exists(target_path1):
+            os.mkdir(target_path1)
+
+
+        # calculate
+        factor_s = factor.rolling(s).mean()
+        for stock in factor_s.columns:
+            stock_factor = factor_s[[stock]]
+            stock_factor.to_csv(target_path1 + '\\' + stock + '.csv')
+
+    ## (2) order_based
+    for s in param['trade_list']:
+        # create filefolder
+        target_path1 = param['write_path'] + factor_name1 + str(s) + 'ord'
+
+        if not os.path.exists(target_path1):
+            os.mkdir(target_path1)
+
+        # calculate
+        trade_set = dataset.loc[dataset['type']=='trade'].copy()
+        trade_set.index = range(len(trade_set))
+        for stock, group in trade_set.groupby('symbol'):
+            stock_factor = group[['trade_sign']].rolling(s).mean()
+            stock_factor['h_m_s'] = group['h_m_s']
+            stock_factor = stock_factor.groupby('h_m_s').last()[['trade_sign']]
+            stock_factor = stock_factor.reindex(param['ticks'])
+            stock_factor = stock_factor.fillna(method='ffill')
+            # save
+            stock_factor.to_csv(target_path1 + '\\' + stock + '.csv')
+    return
+
+
+def fac_trans_spread(dataset, param):
+    '''
+    Calculate spread difference factor;
+    Current value - recent mean value;
+    This is order-based data;
+    Meanwhile, store recent spread mean values as another factor
+    '''
+    factor_name1 = 'transaction_spread_'
+
+    ## (1) time-based
+    # construct a "group by" object based on stock symbol and the second it is in
+    trade = dataset.loc[dataset['type']=='trade'].copy()
+    trade.index = range(len(trade))
+    data = trade.groupby(by=['symbol','h_m_s'])
+
+    # pre-calculate
+    factor = data.sum()['transaction_spread']
+    factor = factor.reset_index()
+    factor = factor.pivot(index='h_m_s',columns='symbol',values='transaction_spread')
+    factor = factor.reindex(param['ticks'])
+    factor = factor.fillna(0)
+
+    for s in param['trade_list']:
+        # create filefolder
+        target_path1 = param['write_path'] + factor_name1 + str(s) + 's'
+        if not os.path.exists(target_path1):
+            os.mkdir(target_path1)
+
+
+        # calculate
+        factor_s = factor.rolling(s).mean()
+        for stock in factor_s.columns:
+            stock_factor = factor_s[[stock]]
+            stock_factor.to_csv(target_path1 + '\\' + stock + '.csv')
+
+    ## (2) order_based
+    for s in param['trade_list']:
+        # create filefolder
+        target_path1 = param['write_path'] + factor_name1 + str(s) + 'ord'
+
+        if not os.path.exists(target_path1):
+            os.mkdir(target_path1)
+
+
+        # calculate
+        for stock, group in trade.groupby('symbol'):
+            stock_factor = group[['transaction_spread']].rolling(s).mean()
+            stock_factor['h_m_s'] = group['h_m_s']
+            stock_factor = stock_factor.groupby('h_m_s').last()[['transaction_spread']]
+            stock_factor = stock_factor.reindex(param['ticks'])
+            stock_factor = stock_factor.fillna(method='ffill')
+            # save
+            stock_factor.to_csv(target_path1 + '\\' + stock + '.csv')
     return
 
 ################### main ##########################
@@ -359,3 +471,7 @@ fac_spread(dataset, param, write = True)
 fac_spread_diff(dataset, param)
 # volume imbalance
 fac_volimbalance(dataset, param)
+fac_spread_diff(dataset, param)
+fac_volimbalance(dataset, param)
+fac_trade_sign(dataset, param)
+fac_trans_spread(dataset, param)

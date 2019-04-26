@@ -9,13 +9,15 @@ import os
 from datetime import datetime, timedelta, time
 
 param = {'path_data': 'F:\\Class - Statistical Machine Learning II\\project\\'
-                      + 'HFT\\1_data_cleaning\\L1.cleaned.20190404.csv',
+                      + 'HFT\\1_data_cleaning\\L1.cleaned.20190405.csv',
          'path_factors': 'F:\\Class - Statistical Machine Learning II\\'
                       + 'project\\HFT\\Statistical_Machine_Learning_Project\\'
-                      + 'factors',
+                      + 'factors_0405',
          'path_output': 'F:\\Class - Statistical Machine Learning II\\'
                       + 'project\\HFT\\Statistical_Machine_Learning_Project\\'
-                      + 'factors\\all_factors'}
+                      + 'factors_0405\\all_factors',
+         'datetime': datetime(2019,4,5,9,30,0,0),
+         'horizon': [1,2,5,10]}
 
 def summarize_factors(param):
     ''' summarize all factors in the directory and save '''
@@ -23,7 +25,6 @@ def summarize_factors(param):
     factors.remove('all_factors')
     stocks = [s[:-4] for s in os.listdir(param['path_factors']+'\\'+factors[0])]
     for s in stocks:
-        print(s)
         stock_factors = None
         for f in factors:
             path = '\\'.join([param['path_factors'],f,s]) + '.csv'
@@ -44,7 +45,7 @@ def calc_return(param):
     dataset['h_m_s'] = [datetime(t.year, t.month, t.day, t.hour, 
                                  t.minute, t.second) for t in dataset['time']]
     dataset['mid_price'] = (dataset['ask']+dataset['bid'])/2
-    ticks = datetime(2019,4,4,9,30,0,0) + np.arange(int(6.5*3600))*timedelta(0,1,0)
+    ticks = param['datetime'] + np.arange(int(6.5*3600))*timedelta(0,1,0)
     stocks = np.array(dataset['symbol'].unique())
     
     # caclulate price of each stock at the end of each second 
@@ -56,7 +57,7 @@ def calc_return(param):
     end_price = end_price.fillna(method='ffill')
     
     # calculate future 1s, 2s, 5s, 10s log return
-    futs = [1,2,5,10]
+    futs = param['horizon']
     fut_ret = pd.concat([np.log(end_price.shift(-fut)/end_price) for fut in futs],
                          axis=1, join='outer')
     columns1 = []

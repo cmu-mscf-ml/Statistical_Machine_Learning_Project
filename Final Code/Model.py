@@ -6,7 +6,6 @@ modeling
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta, time
-import re
 import matplotlib.pyplot as plt 
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import ElasticNet
@@ -163,17 +162,16 @@ all_factors = [
 
 y_horizon = 5
 
-
+#############  Research ####################
+'''
+First try random forest.
+It's complex and have selection power.
+'''
 model = RandomForestRegressor
 model_name = 'random_forest'
 model_param = {'max_depth': 2, 'random_state': 0, 'n_estimators': 100}
 results = run_model(stocks, all_factors, y_horizon, model, param, **model_param) 
-'''
-model = ElasticNet
-model_name = 'elastic_net'
-model_param = {'random_state':0,'alpha':1e-3}
-results = run_model(stocks, all_factors, y_horizon, model, param, False, **model_param)
-'''
+
 key_results = [[res['stock'],res['train']['score'],res['train']['sharpe'],
                 res['test']['score'],res['test']['sharpe']] for res in results]
 key_results = pd.DataFrame(columns=['Stock','Score_train','Sharpe_train',
@@ -181,3 +179,14 @@ key_results = pd.DataFrame(columns=['Stock','Score_train','Sharpe_train',
 ## give the result a name
 key_results.name = model_name+'_'+str(model_param)+'_'+str(y_horizon)+" days"
 
+# Since the model is complex, we first eliminate stocks whose train set score 
+# is even lower than 0.01
+stock_subset = key_results.loc[key_results['Score_train']>0.01]['Stock']
+
+
+'''
+model = ElasticNet
+model_name = 'elastic_net'
+model_param = {'random_state':0,'alpha':1e-3}
+results = run_model(stocks, all_factors, y_horizon, model, param, False, **model_param)
+'''
